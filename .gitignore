@@ -1,0 +1,10 @@
+# Agent/session scratch
+.pi/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Generated figures
+figures/*.png
