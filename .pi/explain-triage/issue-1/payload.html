@@ -1,0 +1,776 @@
+<!-- pi-explain-triage:v1
+issue: 1
+triage-branch: triage/issue-1-1-foundation-ideal-cz-gate-simulation-test-harn
+triage-branch-source: current
+triage-document: docs/triage/issue-1.md
+generated-from-cwd: /Users/wanda/QSTC_PROJECT/Error_ana
+-->
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage explanation for issue #1</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        surface: { 50: '#f8fafc', 100: '#f1f5f9', 700: '#1e293b', 800: '#0f172a', 900: '#020617' },
+        accent: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5' },
+        warn: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' },
+        ok: { 400: '#34d399', 500: '#10b981' },
+        danger: { 400: '#f87171', 500: '#ef4444' }
+      },
+      fontFamily: {
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+      }
+    }
+  }
+}
+</script>
+<style>
+@media print {
+  html, body { background: white !important; color: black !important; }
+  .dark * { background: transparent !important; color: black !important; border-color: #ccc !important; }
+  .no-print { display: none !important; }
+  .print-break { page-break-before: always; }
+  code, pre { background: #f1f5f9 !important; color: #1e293b !important; }
+}
+html { scroll-behavior: smooth; }
+* { transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease, opacity 150ms ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+details summary { cursor: pointer; }
+details summary::-webkit-details-marker { display: none; }
+details[open] summary .chevron { transform: rotate(90deg); }
+.copy-btn:active { transform: scale(0.95); }
+.decision-node { position: relative; }
+.decision-node::before { content: ''; position: absolute; left: 1.25rem; top: 2.5rem; bottom: 0; width: 2px; background: #334155; }
+.decision-node:last-child::before { display: none; }
+.pulse { animation: pulse-glow 2s ease-in-out infinite; }
+@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
+</style>
+</head>
+<body class="bg-surface-900 text-gray-200 min-h-screen font-sans antialiased">
+
+<!-- Skip link -->
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-accent-500 text-white px-4 py-2 rounded z-50">Skip to content</a>
+
+<main id="main" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
+<!-- ============================================================ -->
+<!-- HERO -->
+<!-- ============================================================ -->
+<header class="mb-12">
+  <div class="flex items-center gap-3 mb-4">
+    <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-accent-500/20 text-accent-400 font-bold text-lg border border-accent-500/30 pulse">#1</span>
+    <span class="text-sm uppercase tracking-widest text-accent-400 font-semibold">Triage Explanation</span>
+  </div>
+  <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
+    Foundation: Ideal CZ Gate Simulation + Test Harness
+  </h1>
+  <p class="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-3xl">
+    Build the entire quantum-gate simulation stack from scratch — parameter lookup, Hamiltonian construction, gate protocol execution, fidelity computation, tests, and a figure — for an <strong class="text-gray-200">ideal controlled-Z (CZ) Rydberg gate</strong>.
+  </p>
+  <div class="mt-6 p-4 rounded-xl border border-accent-500/20 bg-accent-500/5">
+    <p class="text-sm text-accent-400 font-semibold uppercase tracking-wide mb-1">Why this matters</p>
+    <p class="text-gray-300">This is a <strong class="text-white">blocker</strong> for all seven downstream issues (#2–#8), which add error models, sweeps, and documentation on top of this foundation. Nothing else can proceed until this issue is resolved.</p>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<!-- TL;DR -->
+<!-- ============================================================ -->
+<section class="mb-16" aria-labelledby="tldr-heading">
+  <h2 id="tldr-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">⚡</span> TL;DR
+  </h2>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="card-hover p-5 rounded-xl bg-surface-800 border border-gray-700/50">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-accent-400 text-xl">🆕</span>
+        <div>
+          <h3 class="font-semibold text-white mb-1">Greenfield Build</h3>
+          <p class="text-sm text-gray-400">No source code exists yet. Seven new files across <code class="text-accent-400 text-xs">src/</code>, <code class="text-accent-400 text-xs">tests/</code>, and <code class="text-accent-400 text-xs">scripts/</code> must be created.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-hover p-5 rounded-xl bg-surface-800 border border-gray-700/50">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-ok-400 text-xl">✅</span>
+        <div>
+          <h3 class="font-semibold text-white mb-1">3-Level Hilbert Space</h3>
+          <p class="text-sm text-gray-400">Project out the doubly-excited |rr⟩ state. Gives infidelity = 0 at machine precision. The 4-level alternative fails or crashes.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-hover p-5 rounded-xl bg-surface-800 border border-gray-700/50">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-warn-400 text-xl">⚠️</span>
+        <div>
+          <h3 class="font-semibold text-white mb-1">Parameter Discrepancies</h3>
+          <p class="text-sm text-gray-400">Two mismatches between <code class="text-accent-400 text-xs">AGENTS.md</code> and ARC (lifetime τ, blockade regime at R=6μm) flagged for maintainer review.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-hover p-5 rounded-xl bg-surface-800 border border-gray-700/50">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-danger-400 text-xl">🔒</span>
+        <div>
+          <h3 class="font-semibold text-white mb-1">Critical Blocker</h3>
+          <p class="text-sm text-gray-400">All seven downstream issues (#2–#8) depend on this foundation. No parallelism possible in the critical path.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STATE MACHINE TRACE -->
+<!-- ============================================================ -->
+<section class="mb-16" aria-labelledby="trace-heading">
+  <h2 id="trace-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">🔄</span> State Machine Trace
+  </h2>
+  <p class="text-gray-400 text-sm mb-4">How the triage process moved through its stages. A <em>triage branch</em> holds the analysis document (not implementation code). A <em>triage document</em> is the Markdown artifact (<code class="text-accent-400 text-xs">docs/triage/issue-1.md</code>).</p>
+  <div class="space-y-3">
+    <div class="flex items-start gap-4 p-4 rounded-lg bg-surface-800 border border-gray-700/30">
+      <span class="shrink-0 w-8 h-8 rounded-full bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm font-bold">1</span>
+      <div>
+        <h3 class="font-semibold text-white text-sm">Issue Intake</h3>
+        <p class="text-sm text-gray-400">Identified as a greenfield implementation ticket — no bug to reproduce, no existing code. Classified as <em>actionable</em> with <em>high confidence</em>.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-4 p-4 rounded-lg bg-surface-800 border border-gray-700/30">
+      <span class="shrink-0 w-8 h-8 rounded-full bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm font-bold">2</span>
+      <div>
+        <h3 class="font-semibold text-white text-sm">Context Gathering</h3>
+        <p class="text-sm text-gray-400">Repository found to be empty of source code. <code class="text-accent-400 text-xs">AGENTS.md</code> reviewed for the project specification. Conda environment located with QuTiP 5.0.4 and ARC 3.9.0.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-4 p-4 rounded-lg bg-surface-800 border border-gray-700/30">
+      <span class="shrink-0 w-8 h-8 rounded-full bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm font-bold">3</span>
+      <div>
+        <h3 class="font-semibold text-white text-sm">Parameter Verification</h3>
+        <p class="text-sm text-gray-400">ARC queried for Rb87 |70S<sub>1/2</sub>⟩ lifetime and C₆ coefficient. Two discrepancies found with <code class="text-accent-400 text-xs">AGENTS.md</code>.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-4 p-4 rounded-lg bg-surface-800 border border-gray-700/30">
+      <span class="shrink-0 w-8 h-8 rounded-full bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm font-bold">4</span>
+      <div>
+        <h3 class="font-semibold text-white text-sm">Prototype Simulation</h3>
+        <p class="text-sm text-gray-400">Multiple ideal-gate simulations run to determine 4-level vs 3-level approach. 3-level model validated as correct.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-4 p-4 rounded-lg bg-surface-800 border border-gray-700/30">
+      <span class="shrink-0 w-8 h-8 rounded-full bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm font-bold">5</span>
+      <div>
+        <h3 class="font-semibold text-white text-sm">Design Decision</h3>
+        <p class="text-sm text-gray-400">3-level model chosen for ideal gate. 4-level model deferred to issue #4 (blockade error). Implementation order established.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-4 p-4 rounded-lg bg-surface-800 border border-gray-700/30">
+      <span class="shrink-0 w-8 h-8 rounded-full bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm font-bold">6</span>
+      <div>
+        <h3 class="font-semibold text-white text-sm">Handoff</h3>
+        <p class="text-sm text-gray-400">Ordered implementation steps, file list, scope boundaries, test shapes, and validation commands documented. Open questions flagged for maintainer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DECISION MAP -->
+<!-- ============================================================ -->
+<section class="mb-16 print-break" aria-labelledby="decision-heading">
+  <h2 id="decision-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">🗺️</span> Decision Map
+  </h2>
+  <div class="p-6 rounded-xl bg-surface-800 border border-gray-700/50 overflow-x-auto">
+    <svg viewBox="0 0 800 680" class="w-full max-w-3xl mx-auto" role="img" aria-label="Decision tree for Issue #1">
+      <style>
+        .dt-text { fill: #e2e8f0; font-family: ui-monospace, monospace; font-size: 11px; }
+        .dt-title { fill: #fff; font-family: system-ui, sans-serif; font-weight: 700; font-size: 13px; }
+        .dt-small { fill: #94a3b8; font-family: system-ui, sans-serif; font-size: 10px; }
+        .dt-chosen { fill: #34d399; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600; }
+        .dt-rejected { fill: #f87171; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600; }
+        .dt-line { stroke: #475569; stroke-width: 2; fill: none; }
+        .dt-line-chosen { stroke: #34d399; stroke-width: 2; fill: none; stroke-dasharray: none; }
+        .dt-line-rejected { stroke: #f87171; stroke-width: 2; fill: none; stroke-dasharray: 4 3; }
+      </style>
+      <!-- Root -->
+      <rect x="250" y="10" width="300" height="40" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="400" y="35" text-anchor="middle" class="dt-title">Issue #1: Build the simulation foundation</text>
+
+      <!-- Q1: Code exist? -->
+      <line x1="400" y1="50" x2="400" y2="80" class="dt-line"/>
+      <rect x="280" y="80" width="240" height="32" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="400" y="101" text-anchor="middle" class="dt-text">Q: Does any code exist?</text>
+      <line x1="400" y1="112" x2="400" y2="132" class="dt-line-chosen"/>
+      <text x="408" y="128" class="dt-chosen">No → Greenfield</text>
+
+      <!-- Q2: Hilbert space -->
+      <rect x="220" y="140" width="360" height="32" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="400" y="161" text-anchor="middle" class="dt-text">Q: What Hilbert space for ideal gate?</text>
+
+      <!-- Option A: 4-level -->
+      <line x1="310" y1="172" x2="180" y2="200" class="dt-line-rejected"/>
+      <rect x="30" y="200" width="300" height="60" rx="6" fill="#1e293b" stroke="#f87171" stroke-width="1.5"/>
+      <text x="180" y="220" text-anchor="middle" class="dt-rejected">REJECTED — 4-level model</text>
+      <text x="180" y="236" text-anchor="middle" class="dt-small">U/Ω=10⁴ → infidelity 3.7×10⁻⁹ (fails 10⁻¹⁰)</text>
+      <text x="180" y="250" text-anchor="middle" class="dt-small">U/Ω=10⁶ → ODE solver crash</text>
+
+      <!-- Option B: 3-level -->
+      <line x1="490" y1="172" x2="600" y2="200" class="dt-line-chosen"/>
+      <rect x="460" y="200" width="300" height="48" rx="6" fill="#022c22" stroke="#34d399" stroke-width="2"/>
+      <text x="610" y="220" text-anchor="middle" class="dt-chosen">✓ CHOSEN — 3-level model</text>
+      <text x="610" y="237" text-anchor="middle" class="dt-small">{|gg⟩,|gr⟩,|rg⟩} with |rr⟩ projected out → infidelity = 0</text>
+
+      <!-- Q3: Lifetime -->
+      <line x1="400" y1="172" x2="400" y2="290" class="dt-line"/>
+      <rect x="200" y="290" width="400" height="32" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="400" y="311" text-anchor="middle" class="dt-text">Q: τ ≈ 230 μs (AGENTS.md) vs 146.5 μs (ARC)?</text>
+      <line x1="400" y1="322" x2="400" y2="348" class="dt-line-chosen"/>
+      <rect x="250" y="348" width="300" height="40" rx="6" fill="#022c22" stroke="#34d399" stroke-width="1.5"/>
+      <text x="400" y="365" text-anchor="middle" class="dt-chosen">✓ Trust ARC, document discrepancy</text>
+      <text x="400" y="379" text-anchor="middle" class="dt-small">Neither 0K (374 μs) nor 300K (146.5 μs) matches 230 μs</text>
+
+      <!-- Q4: Distance -->
+      <line x1="400" y1="388" x2="400" y2="418" class="dt-line"/>
+      <rect x="190" y="418" width="420" height="32" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="400" y="439" text-anchor="middle" class="dt-text">Q: R ≈ 6 μm (U/Ω=4.6, weak blockade). Default?</text>
+      <line x1="400" y1="450" x2="400" y2="476" class="dt-line-chosen"/>
+      <rect x="230" y="476" width="340" height="40" rx="6" fill="#022c22" stroke="#34d399" stroke-width="1.5"/>
+      <text x="400" y="493" text-anchor="middle" class="dt-chosen">✓ Default R = 4 μm (U/Ω ≈ 53)</text>
+      <text x="400" y="507" text-anchor="middle" class="dt-small">Strong blockade regime. Ideal gate uses U = ∞ anyway.</text>
+
+      <!-- Q5: Environment -->
+      <line x1="400" y1="516" x2="400" y2="546" class="dt-line"/>
+      <rect x="200" y="546" width="400" height="32" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="400" y="567" text-anchor="middle" class="dt-text">Q: Environment — local venv or conda?</text>
+      <line x1="400" y1="578" x2="400" y2="604" class="dt-line-chosen"/>
+      <rect x="220" y="604" width="360" height="40" rx="6" fill="#022c22" stroke="#34d399" stroke-width="1.5"/>
+      <text x="400" y="621" text-anchor="middle" class="dt-chosen">✓ Create requirements.txt</text>
+      <text x="400" y="635" text-anchor="middle" class="dt-small">For reproducibility alongside existing conda env</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- EVIDENCE -->
+<!-- ============================================================ -->
+<section class="mb-16 print-break" aria-labelledby="evidence-heading">
+  <h2 id="evidence-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">🔬</span> Evidence
+  </h2>
+  <p class="text-gray-400 text-sm mb-6">The triage document is unusually thorough because the triager ran actual simulations. Here is the key evidence.</p>
+
+  <!-- Evidence 1: 4-level infeasibility -->
+  <div class="mb-6">
+    <details open class="group rounded-xl border border-gray-700/50 bg-surface-800 overflow-hidden">
+      <summary class="flex items-center gap-3 p-5 cursor-pointer select-none">
+        <span class="chevron text-accent-400 transition-transform duration-150">▶</span>
+        <h3 class="font-semibold text-white">Evidence 1 — The 4-level ideal model is infeasible</h3>
+        <span class="ml-auto text-xs px-2 py-1 rounded-full bg-danger-500/20 text-danger-400 font-semibold">Critical</span>
+      </summary>
+      <div class="px-5 pb-5">
+        <p class="text-sm text-gray-400 mb-4">Simulation results sweeping the ratio U/Ω (interaction strength to Rabi frequency) in the 4-level Hilbert space:</p>
+        <div class="overflow-x-auto rounded-lg border border-gray-700/30">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-surface-700/50">
+                <th class="text-left px-4 py-3 text-gray-300 font-semibold">U/Ω</th>
+                <th class="text-left px-4 py-3 text-gray-300 font-semibold">Infidelity</th>
+                <th class="text-left px-4 py-3 text-gray-300 font-semibold">Outcome</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700/30">
+              <tr><td class="px-4 py-2.5 font-mono text-gray-300">1,000</td><td class="px-4 py-2.5 font-mono text-danger-400">3.7 × 10⁻⁷</td><td class="px-4 py-2.5 text-danger-400">Fails threshold</td></tr>
+              <tr><td class="px-4 py-2.5 font-mono text-gray-300">10,000</td><td class="px-4 py-2.5 font-mono text-danger-400">3.7 × 10⁻⁹</td><td class="px-4 py-2.5 text-danger-400">Fails threshold (barely)</td></tr>
+              <tr><td class="px-4 py-2.5 font-mono text-gray-300">100,000</td><td class="px-4 py-2.5 font-mono text-warn-400">3.7 × 10⁻¹¹</td><td class="px-4 py-2.5 text-warn-400">Passes, but stability degrades</td></tr>
+              <tr><td class="px-4 py-2.5 font-mono text-gray-300">1,000,000</td><td class="px-4 py-2.5 font-mono text-danger-400">—</td><td class="px-4 py-2.5 text-danger-400 font-semibold">ODE solver crash</td></tr>
+              <tr class="bg-ok-400/5"><td class="px-4 py-2.5 font-mono text-ok-400 font-bold">3-level (U=∞)</td><td class="px-4 py-2.5 font-mono text-ok-400 font-bold">0</td><td class="px-4 py-2.5 text-ok-400 font-bold">Machine precision ✓</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-sm text-gray-400 mt-3">This is the strongest evidence in the document. It justifies the central design decision and was obtained <strong class="text-gray-200">empirically</strong>, not assumed.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Evidence 2: ARC discrepancies -->
+  <div class="mb-6">
+    <details class="group rounded-xl border border-gray-700/50 bg-surface-800 overflow-hidden">
+      <summary class="flex items-center gap-3 p-5 cursor-pointer select-none">
+        <span class="chevron text-accent-400 transition-transform duration-150">▶</span>
+        <h3 class="font-semibold text-white">Evidence 2 — ARC parameter discrepancies</h3>
+        <span class="ml-auto text-xs px-2 py-1 rounded-full bg-warn-500/20 text-warn-400 font-semibold">Unresolved</span>
+      </summary>
+      <div class="px-5 pb-5">
+        <p class="text-sm text-gray-400 mb-4">The triager queried ARC for the Rydberg state |70, 0, 0.5⟩ of Rubidium-87:</p>
+        <div class="space-y-3">
+          <div class="p-4 rounded-lg bg-surface-700/30 border border-warn-500/20">
+            <p class="text-sm"><span class="font-semibold text-warn-400">Lifetime:</span> <span class="text-gray-300">ARC returns 146.5 μs at 300K. <code class="text-accent-400 text-xs">AGENTS.md</code> claims ~230 μs. Neither ARC's 0K radiative lifetime (373.9 μs) nor its 300K value matches.</span> <span class="text-warn-400 font-semibold">Unresolved.</span></p>
+          </div>
+          <div class="p-4 rounded-lg bg-surface-700/30 border border-ok-400/20">
+            <p class="text-sm"><span class="font-semibold text-ok-400">C₆ coefficient:</span> <span class="text-gray-300">ARC returns −862.7 GHz·μm⁶. <code class="text-accent-400 text-xs">AGENTS.md</code> claims ~860 GHz·μm⁶.</span> <span class="text-ok-400 font-semibold">Match</span> <span class="text-gray-400">(sign aside).</span></p>
+          </div>
+          <div class="p-4 rounded-lg bg-surface-700/30 border border-warn-500/20">
+            <p class="text-sm"><span class="font-semibold text-warn-400">Blockade at R=6 μm:</span> <span class="text-gray-300">U/Ω = 4.6. This is <em>not</em> the strong-blockade regime ("U ≫ Ω") that <code class="text-accent-400 text-xs">AGENTS.md</code> claims. R ≈ 3–4 μm is needed for strong blockade.</span></p>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- Evidence 3: Phase structure -->
+  <div class="mb-6">
+    <details class="group rounded-xl border border-gray-700/50 bg-surface-800 overflow-hidden">
+      <summary class="flex items-center gap-3 p-5 cursor-pointer select-none">
+        <span class="chevron text-accent-400 transition-transform duration-150">▶</span>
+        <h3 class="font-semibold text-white">Evidence 3 — Phase structure of the π–2π–π protocol</h3>
+      </summary>
+      <div class="px-5 pb-5">
+        <p class="text-sm text-gray-300 mb-2">The protocol (three sequential laser pulses: π on atom 1, 2π on atom 2, π on atom 1) produces the diagonal unitary:</p>
+        <div class="p-3 bg-surface-700/50 rounded-lg font-mono text-sm text-accent-400 text-center my-3">
+          diag(1, −1, −1, −1) = CZ × (Z₁ ⊗ Z₂)
+        </div>
+        <p class="text-sm text-gray-400">This equals the target CZ gate up to known single-qubit Z rotations. This is standard in the Rydberg gate literature and means the <strong class="text-gray-200">fidelity module must include a local-Z-correction step</strong>.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Evidence 4: QuTiP 5 API -->
+  <div class="mb-6">
+    <details class="group rounded-xl border border-gray-700/50 bg-surface-800 overflow-hidden">
+      <summary class="flex items-center gap-3 p-5 cursor-pointer select-none">
+        <span class="chevron text-accent-400 transition-transform duration-150">▶</span>
+        <h3 class="font-semibold text-white">Evidence 4 — QuTiP 5 API confirmed</h3>
+      </summary>
+      <div class="px-5 pb-5">
+        <p class="text-sm text-gray-400">QuTiP 5.0.4 in the conda env was verified to support all needed functions (<code class="text-accent-400 text-xs">sesolve</code>, <code class="text-accent-400 text-xs">mesolve</code>, <code class="text-accent-400 text-xs">basis</code>, <code class="text-accent-400 text-xs">tensor</code>, <code class="text-accent-400 text-xs">Qobj</code>).</p>
+        <div class="mt-3 p-3 rounded-lg bg-warn-500/10 border border-warn-500/20">
+          <p class="text-sm text-warn-400"><strong>API break from v4:</strong> Solver options must be passed as a plain <code class="text-warn-300 text-xs">dict</code>, not an <code class="text-warn-300 text-xs">Options()</code> object.</p>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- IMPLEMENTATION PLAN -->
+<!-- ============================================================ -->
+<section class="mb-16 print-break" aria-labelledby="impl-heading">
+  <h2 id="impl-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">🏗️</span> Implementation Plan
+  </h2>
+
+  <!-- Glossary -->
+  <div class="mb-6 p-4 rounded-xl bg-surface-800 border border-gray-700/50">
+    <h3 class="font-semibold text-accent-400 text-sm uppercase tracking-wide mb-3">Key Definitions</h3>
+    <dl class="grid gap-2 text-sm">
+      <div class="flex gap-2"><dt class="font-mono text-gray-300 shrink-0 w-36">params.py</dt><dd class="text-gray-400">Queries the ARC library for physical constants of the Rydberg atom.</dd></div>
+      <div class="flex gap-2"><dt class="font-mono text-gray-300 shrink-0 w-36">hamiltonian.py</dt><dd class="text-gray-400">Constructs quantum Hamiltonian matrices (QuTiP <code class="text-accent-400 text-xs">Qobj</code>) describing the laser-atom interaction.</dd></div>
+      <div class="flex gap-2"><dt class="font-mono text-gray-300 shrink-0 w-36">protocol.py</dt><dd class="text-gray-400">Executes the π–2π–π pulse sequence via three <code class="text-accent-400 text-xs">sesolve</code> calls.</dd></div>
+      <div class="flex gap-2"><dt class="font-mono text-gray-300 shrink-0 w-36">fidelity.py</dt><dd class="text-gray-400">Computes the Pedersen average gate fidelity, insensitive to global phase.</dd></div>
+      <div class="flex gap-2"><dt class="font-mono text-gray-300 shrink-0 w-36">Pedersen fidelity</dt><dd class="text-gray-400">\(F = \frac{\mathrm{Tr}(M^\dagger M) + |\mathrm{Tr}(M)|^2}{d(d+1)}\), where \(M = U_{\text{target}}^\dagger U_{\text{actual}}\).</dd></div>
+    </dl>
+  </div>
+
+  <!-- Steps -->
+  <div class="space-y-4">
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-gray-700 text-gray-300 flex items-center justify-center font-bold text-sm">0</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">requirements.txt</code>
+        </div>
+        <p class="text-sm text-gray-400">Pin QuTiP ≥ 5.0, ARC, numpy, matplotlib, pytest.</p>
+        <p class="text-xs text-gray-500 mt-1">Everything else needs imports to work.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">1</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">src/params.py</code>
+        </div>
+        <p class="text-sm text-gray-400">Query ARC for τ, C₆, Γ. Compute Ω, U, U/Ω. Return a frozen dataclass.</p>
+        <p class="text-xs text-gray-500 mt-1">Every other module imports physical parameters from here.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">2</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">src/hamiltonian.py</code>
+        </div>
+        <p class="text-sm text-gray-400">Build 3-level (ideal, U=∞) and 4-level (finite blockade) Hamiltonians as QuTiP <code class="text-accent-400 text-xs">Qobj</code> matrices.</p>
+        <p class="text-xs text-gray-500 mt-1">Protocol needs Hamiltonians to run.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">3</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">src/fidelity.py</code>
+        </div>
+        <p class="text-sm text-gray-400">Implement Pedersen formula for unitary and Kraus-operator inputs. Include local-Z-correction optimizer.</p>
+        <p class="text-xs text-gray-500 mt-1">Needed to score the protocol output.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">4</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">src/protocol.py</code>
+        </div>
+        <p class="text-sm text-gray-400">Run the π–2π–π gate: three <code class="text-accent-400 text-xs">sesolve</code> calls per input state. Return unitary diagonal, phases, and time-resolved populations.</p>
+        <p class="text-xs text-gray-500 mt-1">Depends on steps 1–3.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">5</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">tests/test_fidelity.py</code>
+        </div>
+        <p class="text-sm text-gray-400">Unit tests: CZ vs CZ → 1.0; CZ vs I → 0.4; random unitary → F ∈ [0,1].</p>
+        <p class="text-xs text-gray-500 mt-1">Validates the metric before it's used to score the gate.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">6</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">tests/test_ideal_gate.py</code>
+        </div>
+        <p class="text-sm text-gray-400">Integration test: run ideal gate, assert 1−F < 10⁻¹⁰, assert entangling phase = π.</p>
+        <p class="text-xs text-gray-500 mt-1">The acceptance criterion.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-4 items-start p-4 rounded-xl bg-surface-800 border border-gray-700/50 card-hover">
+      <span class="shrink-0 w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center font-bold text-sm">7</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <code class="text-accent-400 text-sm">scripts/run_ideal.py</code> + <code class="text-accent-400 text-sm">figures/</code>
+        </div>
+        <p class="text-sm text-gray-400">Run simulation, plot population dynamics for all 4 basis states, save PNG.</p>
+        <p class="text-xs text-gray-500 mt-1">Visual validation and deliverable figure.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Critical path -->
+  <div class="mt-8 p-5 rounded-xl bg-surface-800 border border-accent-500/30">
+    <h3 class="font-semibold text-accent-400 text-sm uppercase tracking-wide mb-3">Critical Path</h3>
+    <div class="flex flex-wrap items-center gap-2 font-mono text-sm">
+      <span class="px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400">params.py</span>
+      <span class="text-gray-500">→</span>
+      <span class="px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400">hamiltonian.py</span>
+      <span class="text-gray-500">→</span>
+      <span class="px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400">protocol.py</span>
+      <span class="text-gray-500">→</span>
+      <span class="px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400">fidelity.py</span>
+      <span class="text-gray-500">→</span>
+      <span class="px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400">tests</span>
+      <span class="text-gray-500">→</span>
+      <span class="px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400">figure</span>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">Each module depends on the one before it. There is no parallelism in this chain.</p>
+  </div>
+
+  <!-- Scope boundaries -->
+  <div class="mt-6 p-5 rounded-xl bg-surface-800 border border-gray-700/50">
+    <h3 class="font-semibold text-gray-300 text-sm uppercase tracking-wide mb-3">Scope Boundaries — What NOT to Build</h3>
+    <ul class="space-y-2 text-sm text-gray-400">
+      <li class="flex items-start gap-2"><span class="text-danger-400 mt-0.5">✗</span> No error/noise models (issues #3–#7: spontaneous decay, finite blockade, Doppler shifts, Raman scattering, amplitude noise)</li>
+      <li class="flex items-start gap-2"><span class="text-danger-400 mt-0.5">✗</span> No HTML explainer (issue #2)</li>
+      <li class="flex items-start gap-2"><span class="text-danger-400 mt-0.5">✗</span> No sweep or analytical comparison modules</li>
+      <li class="flex items-start gap-2"><span class="text-gray-500 mt-0.5">○</span> The 4-level Hamiltonian builder can be <em>included</em> in <code class="text-accent-400 text-xs">hamiltonian.py</code> but is not <em>tested or used</em> until issue #4</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- VALIDATION -->
+<!-- ============================================================ -->
+<section class="mb-16 print-break" aria-labelledby="validation-heading">
+  <h2 id="validation-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">✓</span> Validation
+  </h2>
+
+  <!-- Primary acceptance test -->
+  <div class="mb-6">
+    <h3 class="font-semibold text-white mb-3">Primary Acceptance Test</h3>
+    <div class="relative">
+      <pre class="p-4 rounded-xl bg-surface-800 border border-gray-700/50 overflow-x-auto font-mono text-sm text-gray-300 leading-relaxed"><code>def test_ideal_gate_fidelity():
+    result = run_ideal_gate(omega=2*np.pi*4.0)  # 4 MHz Rabi frequency
+    F = pedersen_fidelity(result["unitary_diagonal"], CZ_TARGET)
+    assert 1 - F < 1e-10</code></pre>
+      <button onclick="copyCode(this)" aria-label="Copy code" class="copy-btn absolute top-3 right-3 p-2 rounded-lg bg-surface-700/80 hover:bg-surface-700 text-gray-400 hover:text-white text-xs font-mono">Copy</button>
+    </div>
+    <p class="text-sm text-gray-400 mt-2">Maps directly to acceptance criterion #3 from the issue: "protocol.py ideal run yields 1 − F &lt; 10⁻¹⁰."</p>
+  </div>
+
+  <!-- Secondary tests -->
+  <div class="mb-6">
+    <h3 class="font-semibold text-white mb-3">Secondary Tests</h3>
+    <div class="overflow-x-auto rounded-xl border border-gray-700/50">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-surface-800">
+            <th class="text-left px-4 py-3 text-gray-300 font-semibold">Test</th>
+            <th class="text-left px-4 py-3 text-gray-300 font-semibold">What it checks</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700/30 bg-surface-800/50">
+          <tr><td class="px-4 py-2.5 font-mono text-accent-400 text-xs">test_ideal_entangling_phase</td><td class="px-4 py-2.5 text-gray-400">φ₁₁ − φ₀₁ − φ₁₀ + φ₀₀ = π (to within 10⁻⁸)</td></tr>
+          <tr><td class="px-4 py-2.5 font-mono text-accent-400 text-xs">test_cz_vs_cz</td><td class="px-4 py-2.5 text-gray-400">Pedersen fidelity of CZ against itself = 1.0 exactly</td></tr>
+          <tr><td class="px-4 py-2.5 font-mono text-accent-400 text-xs">test_cz_vs_identity</td><td class="px-4 py-2.5 text-gray-400">Pedersen fidelity of I against CZ = 0.4 (hand-computed)</td></tr>
+          <tr><td class="px-4 py-2.5 font-mono text-accent-400 text-xs">test_random_unitary_bounded</td><td class="px-4 py-2.5 text-gray-400">F ∈ [0, 1] for randomly generated unitaries</td></tr>
+          <tr><td class="px-4 py-2.5 font-mono text-accent-400 text-xs">test_params_invalid_quantum_numbers</td><td class="px-4 py-2.5 text-gray-400"><code class="text-accent-400 text-xs">params.py</code> raises a clear error for unphysical inputs (e.g., l ≥ n)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Validation commands -->
+  <div class="mb-6">
+    <h3 class="font-semibold text-white mb-3">Validation Commands</h3>
+    <div class="relative">
+      <pre class="p-4 rounded-xl bg-surface-800 border border-gray-700/50 overflow-x-auto font-mono text-sm text-gray-300 leading-relaxed"><code>conda activate qutip
+pytest tests/ -v
+python scripts/run_ideal.py
+# → figures/population_dynamics.png should exist
+#   and show 4 curves with 3 pulse regions</code></pre>
+      <button onclick="copyCode(this)" aria-label="Copy code" class="copy-btn absolute top-3 right-3 p-2 rounded-lg bg-surface-700/80 hover:bg-surface-700 text-gray-400 hover:text-white text-xs font-mono">Copy</button>
+    </div>
+  </div>
+
+  <!-- Expected signals -->
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="p-4 rounded-xl bg-surface-800 border border-danger-500/30">
+      <h4 class="text-sm font-semibold text-danger-400 mb-2">Before Implementation</h4>
+      <p class="text-sm text-gray-400"><code class="text-xs text-danger-400">pytest</code> fails with <code class="text-xs text-danger-400">ModuleNotFoundError</code> (no <code class="text-xs">src/</code> directory).</p>
+    </div>
+    <div class="p-4 rounded-xl bg-surface-800 border border-ok-400/30">
+      <h4 class="text-sm font-semibold text-ok-400 mb-2">After Implementation</h4>
+      <p class="text-sm text-gray-400">All tests pass. Figure file exists. Infidelity reported as &lt; 10⁻¹⁰.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CAVEATS & OPEN QUESTIONS -->
+<!-- ============================================================ -->
+<section class="mb-16 print-break" aria-labelledby="caveats-heading">
+  <h2 id="caveats-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-warn-400">⚠️</span> Caveats & Open Questions
+  </h2>
+  <p class="text-gray-400 text-sm mb-6">Preserved from the triage document. None are resolved; all require human judgment.</p>
+
+  <!-- Q1 -->
+  <div class="mb-4 p-5 rounded-xl border border-warn-500/30 bg-warn-500/5">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-xs px-2 py-0.5 rounded-full bg-danger-500/20 text-danger-400 font-bold uppercase tracking-wide">High Priority</span>
+      <h3 class="font-semibold text-white">Q1: Lifetime discrepancy</h3>
+    </div>
+    <p class="text-sm text-gray-300"><code class="text-accent-400 text-xs">AGENTS.md</code> specifies τ ≈ 230 μs for the Rydberg state. ARC returns <strong class="text-white">146.5 μs at 300K</strong> and <strong class="text-white">373.9 μs at 0K</strong>. Neither matches. The triage recommends trusting ARC (per <code class="text-accent-400 text-xs">AGENTS.md</code> standing order #5: "use ARC as the authoritative source"), but this affects every error estimate in issues #3–#8.</p>
+    <p class="text-sm text-warn-400 font-semibold mt-2">The project owner should confirm this is acceptable.</p>
+  </div>
+
+  <!-- Q2 -->
+  <div class="mb-4 p-5 rounded-xl border border-warn-500/30 bg-warn-500/5">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-xs px-2 py-0.5 rounded-full bg-warn-500/20 text-warn-400 font-bold uppercase tracking-wide">Medium Priority</span>
+      <h3 class="font-semibold text-white">Q2: Default interatomic distance</h3>
+    </div>
+    <p class="text-sm text-gray-300"><code class="text-accent-400 text-xs">AGENTS.md</code> specifies R ≈ 6 μm, but at that distance U/Ω = 4.6 — far from "U ≫ Ω". The ideal gate uses U = ∞ and doesn't need R, but <code class="text-accent-400 text-xs">params.py</code> must pick a sensible default for downstream use. Triage recommends R = 4 μm (U/Ω ≈ 53).</p>
+    <p class="text-sm text-warn-400 font-semibold mt-2">This is a physics judgment call, not a code decision.</p>
+  </div>
+
+  <!-- Q3 -->
+  <div class="mb-4 p-5 rounded-xl border border-gray-700/50 bg-surface-800">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-xs px-2 py-0.5 rounded-full bg-gray-600/30 text-gray-400 font-bold uppercase tracking-wide">Low Priority</span>
+      <h3 class="font-semibold text-white">Q3: Environment management</h3>
+    </div>
+    <p class="text-sm text-gray-400">A conda environment with the right packages exists, but the project has no <code class="text-accent-400 text-xs">requirements.txt</code> or setup instructions. Triage recommends creating a <code class="text-accent-400 text-xs">requirements.txt</code> for reproducibility. This is low-risk but needs a decision on whether to also document the conda path.</p>
+  </div>
+
+  <!-- Caveat: 3-level vs 4-level -->
+  <div class="mb-4 p-5 rounded-xl border border-accent-500/20 bg-accent-500/5">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-accent-400 text-lg">💡</span>
+      <h3 class="font-semibold text-white">Caveat: 3-level vs. 4-level model confusion risk</h3>
+    </div>
+    <p class="text-sm text-gray-300">The 3-level model (U = ∞, |rr⟩ projected out) is correct for the ideal gate but is a <em>different</em> Hilbert space than the 4-level model used by error-analysis issues. Implementers of issue #4 (blockade error) will need to switch to the 4-level model. The triage plan mitigates this by including both builders in <code class="text-accent-400 text-xs">hamiltonian.py</code> with clear naming and documentation, but the conceptual discontinuity remains.</p>
+  </div>
+
+  <!-- Caveat: Phase convention -->
+  <div class="mb-4 p-5 rounded-xl border border-accent-500/20 bg-accent-500/5">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-accent-400 text-lg">💡</span>
+      <h3 class="font-semibold text-white">Caveat: Phase convention</h3>
+    </div>
+    <p class="text-sm text-gray-300">The π–2π–π protocol produces <code class="text-accent-400 text-xs">diag(1, −1, −1, −1)</code> = CZ × (Z₁⊗Z₂), not bare CZ. The fidelity module must apply local Z corrections before scoring. If this correction logic is wrong, the fidelity will be reported as &lt; 1 even for a perfect gate. The triage document flags this but does not provide a reference implementation of the correction optimizer.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- REVISION TARGETS -->
+<!-- ============================================================ -->
+<section class="mb-16 print-break" aria-labelledby="revision-heading">
+  <h2 id="revision-heading" class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="text-accent-400">🎯</span> Revision Targets
+  </h2>
+  <p class="text-gray-400 text-sm mb-6">These are the specific decisions a human annotator might reasonably want to change, override, or request more information about.</p>
+
+  <div class="space-y-4">
+    <!-- R1 -->
+    <div class="p-5 rounded-xl border border-gray-700/50 bg-surface-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R1</span>
+          <h3 class="font-semibold text-white text-sm">Use 3-level Hilbert space for ideal gate</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-ok-400/20 text-ok-400 font-semibold">Low Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> Is projecting out |rr⟩ consistent with the project's pedagogical goals? Issue #1 may want to show all 4 levels even if fidelity is slightly imperfect.</p>
+      <p class="text-sm text-gray-500"><strong class="text-gray-400">Risk if wrong:</strong> Only affects ideal test threshold.</p>
+    </div>
+
+    <!-- R2 -->
+    <div class="p-5 rounded-xl border border-danger-500/30 bg-danger-500/5 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R2</span>
+          <h3 class="font-semibold text-white text-sm">Trust ARC lifetime (146.5 μs) over AGENTS.md (230 μs)</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-danger-500/20 text-danger-400 font-semibold">High Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> The 230 μs may come from a specific paper the PI wants to match. Changing it affects all decay-related error estimates in #3–#8.</p>
+      <p class="text-sm text-danger-400"><strong>Risk if wrong:</strong> Propagates through every error module.</p>
+    </div>
+
+    <!-- R3 -->
+    <div class="p-5 rounded-xl border border-warn-500/20 bg-warn-500/5 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R3</span>
+          <h3 class="font-semibold text-white text-sm">Default R = 4 μm instead of AGENTS.md's 6 μm</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-warn-500/20 text-warn-400 font-semibold">Medium Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> The PI may have chosen 6 μm deliberately (e.g., to match a specific experimental setup).</p>
+      <p class="text-sm text-gray-500"><strong class="text-gray-400">Risk if wrong:</strong> Affects blockade error (#4) quantitatively.</p>
+    </div>
+
+    <!-- R4 -->
+    <div class="p-5 rounded-xl border border-gray-700/50 bg-surface-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R4</span>
+          <h3 class="font-semibold text-white text-sm">Include 4-level Hamiltonian in <code class="text-accent-400 text-xs">hamiltonian.py</code> now</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-ok-400/20 text-ok-400 font-semibold">Low Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> Could introduce dead code that drifts. Alternative: defer entirely to issue #4.</p>
+      <p class="text-sm text-gray-500"><strong class="text-gray-400">Risk if wrong:</strong> Low.</p>
+    </div>
+
+    <!-- R5 -->
+    <div class="p-5 rounded-xl border border-gray-700/50 bg-surface-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R5</span>
+          <h3 class="font-semibold text-white text-sm">Create <code class="text-accent-400 text-xs">requirements.txt</code> vs. document conda env</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-ok-400/20 text-ok-400 font-semibold">Low Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> If other collaborators use a different OS or package manager, a requirements.txt alone may not suffice.</p>
+      <p class="text-sm text-gray-500"><strong class="text-gray-400">Risk if wrong:</strong> Low.</p>
+    </div>
+
+    <!-- R6 -->
+    <div class="p-5 rounded-xl border border-warn-500/20 bg-warn-500/5 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R6</span>
+          <h3 class="font-semibold text-white text-sm">Pedersen fidelity with local Z correction as the metric</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-warn-500/20 text-warn-400 font-semibold">Medium Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> Some references use bare process fidelity or entanglement fidelity instead. Confirm the metric matches the project's target publication/comparison.</p>
+      <p class="text-sm text-warn-400"><strong>Risk if wrong:</strong> Wrong metric = wrong conclusions.</p>
+    </div>
+
+    <!-- R7 -->
+    <div class="p-5 rounded-xl border border-gray-700/50 bg-surface-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-accent-400 font-bold text-sm">R7</span>
+          <h3 class="font-semibold text-white text-sm">QuTiP solver options (<code class="text-accent-400 text-xs">nsteps</code>, tolerances)</h3>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-ok-400/20 text-ok-400 font-semibold">Low Risk</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-2"><strong class="text-gray-300">What to review:</strong> The triage doesn't prescribe specific solver tolerances. For the 3-level ideal model this is irrelevant (exact result), but downstream issues with stiff Lindblad equations may need careful tuning established here.</p>
+      <p class="text-sm text-gray-500"><strong class="text-gray-400">Risk if wrong:</strong> Low for this issue, medium for later issues.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<footer class="pt-8 border-t border-gray-700/50">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+    <p class="text-sm text-gray-500">Generated by <code class="text-accent-400 text-xs">/explain-triage</code> · Triage analysis for issue <span class="text-accent-400 font-semibold">#1</span></p>
+    <button onclick="window.print()" aria-label="Print this page" class="no-print px-4 py-2 rounded-lg bg-surface-800 border border-gray-700 text-gray-300 hover:text-white hover:border-accent-500 text-sm font-medium transition-colors">
+      🖨️ Print
+    </button>
+  </div>
+</footer>
+
+</main>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.relative').querySelector('code');
+  if (!pre) return;
+  const text = pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('text-ok-400');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('text-ok-400');
+    }, 1500);
+  }).catch(() => {
+    btn.textContent = 'Failed';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+
+// Auto-open first details on load for nice UX
+document.addEventListener('DOMContentLoaded', () => {
+  const firstDetails = document.querySelector('details:not([open])');
+  // Already handled by 'open' attribute
+});
+</script>
+
+</body>
+</html>

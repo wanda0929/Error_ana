@@ -1,0 +1,1069 @@
+<!-- pi-explain-triage:v1
+issue: 2
+triage-branch: triage/issue-2-2-html-scaffold-introduction-ideal-gate-section
+triage-branch-source: current
+triage-document: docs/triage/issue-2.md
+generated-from-cwd: /Users/wanda/QSTC_PROJECT/Error_ana
+-->
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage explanation for issue #2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        surface: { 900: '#0f1117', 800: '#161822', 700: '#1e2030', 600: '#282a3a' },
+        rydberg: '#f472b6',
+        ground: '#34d399',
+        blockade: '#fbbf24',
+        accent: { blue: '#60a5fa', purple: '#a78bfa', cyan: '#22d3ee' }
+      },
+      fontFamily: {
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+      }
+    }
+  }
+}
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['$$', '$$']]
+  },
+  chtml: {
+    scale: 0.95
+  }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<style>
+  @media print {
+    html, body { background: #fff !important; color: #000 !important; }
+    .no-print { display: none !important; }
+    * { color: #000 !important; background: transparent !important; border-color: #ccc !important; box-shadow: none !important; }
+    a { text-decoration: underline; }
+    code, pre { background: #f3f4f6 !important; color: #1f2937 !important; }
+    details { display: block !important; }
+    details > summary { display: none !important; }
+    details > *:not(summary) { display: block !important; }
+  }
+
+  html { scroll-behavior: smooth; }
+  body { background: #0f1117; }
+
+  .card-hover { transition: transform 150ms ease, box-shadow 150ms ease; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+  details summary { cursor: pointer; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    transition: transform 150ms ease;
+  }
+  details[open] summary::before { transform: rotate(90deg); }
+
+  .copy-btn { transition: opacity 150ms ease, background 150ms ease; }
+  .copy-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .step-connector { position: relative; }
+  .step-connector::before {
+    content: '';
+    position: absolute;
+    left: 1.25rem;
+    top: 3rem;
+    bottom: -0.5rem;
+    width: 2px;
+    background: linear-gradient(to bottom, #60a5fa, transparent);
+  }
+  .step-connector:last-child::before { display: none; }
+
+  .badge-pulse {
+    animation: pulse-subtle 3s ease-in-out infinite;
+  }
+  @keyframes pulse-subtle {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(96, 165, 250, 0); }
+  }
+
+  .decision-row { transition: background 150ms ease; }
+  .decision-row:hover { background: rgba(255,255,255,0.03); }
+
+  .callout-warning { border-left: 4px solid #fbbf24; background: rgba(251,191,36,0.06); }
+  .callout-info { border-left: 4px solid #60a5fa; background: rgba(96,165,250,0.06); }
+  .callout-danger { border-left: 4px solid #f87171; background: rgba(248,113,113,0.06); }
+
+  .nav-link { transition: color 150ms ease; }
+  .nav-link:hover { color: #60a5fa; }
+
+  :focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; border-radius: 4px; }
+
+  .toc-link {
+    transition: color 150ms ease, padding-left 150ms ease;
+  }
+  .toc-link:hover {
+    color: #60a5fa;
+    padding-left: 0.25rem;
+  }
+</style>
+</head>
+<body class="text-gray-300 min-h-screen font-sans antialiased">
+
+<!-- Sticky Nav -->
+<nav class="no-print sticky top-0 z-50 bg-surface-900/90 backdrop-blur-md border-b border-white/5">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-mono text-gray-500">/explain-triage</span>
+      <span class="text-gray-600">·</span>
+      <span class="text-sm text-gray-400">Issue #2</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="document.getElementById('toc-panel').classList.toggle('hidden')" aria-label="Toggle table of contents" class="px-3 py-1.5 text-xs rounded-md bg-white/5 hover:bg-white/10 transition-colors">
+        ☰ Sections
+      </button>
+      <button onclick="window.print()" aria-label="Print this page" class="px-3 py-1.5 text-xs rounded-md bg-white/5 hover:bg-white/10 transition-colors">
+        🖨 Print
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- TOC Panel -->
+<div id="toc-panel" class="hidden no-print fixed top-14 right-4 z-40 bg-surface-800 border border-white/10 rounded-xl shadow-2xl p-4 w-64">
+  <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Sections</h3>
+  <nav class="flex flex-col gap-1.5 text-sm">
+    <a href="#hero" class="toc-link text-gray-400">Hero</a>
+    <a href="#tldr" class="toc-link text-gray-400">TL;DR</a>
+    <a href="#decisions" class="toc-link text-gray-400">Decision Map</a>
+    <a href="#state-machine" class="toc-link text-gray-400">State Machine Trace</a>
+    <a href="#evidence" class="toc-link text-gray-400">Evidence</a>
+    <a href="#implementation" class="toc-link text-gray-400">Implementation Plan</a>
+    <a href="#validation" class="toc-link text-gray-400">Validation</a>
+    <a href="#caveats" class="toc-link text-gray-400">Caveats & Open Questions</a>
+    <a href="#revision" class="toc-link text-gray-400">Revision Targets</a>
+  </nav>
+</div>
+
+<main class="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
+
+  <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+  <section id="hero" class="pt-12 sm:pt-20 pb-12 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="badge-pulse inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-blue/10 text-accent-blue text-xl font-bold font-mono shrink-0">#2</span>
+      <div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-white leading-tight tracking-tight">
+          HTML Scaffold, Introduction &amp; Ideal Gate Section
+        </h1>
+        <p class="mt-3 text-lg text-gray-400 leading-relaxed max-w-3xl">
+          Create <code class="text-accent-blue bg-accent-blue/10 px-1.5 py-0.5 rounded text-sm">site/index.html</code> — the single reader-facing deliverable of the <strong class="text-white">Error_ana</strong> repository — with all shared infrastructure, the Introduction section, and the Ideal Gate section.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-8 p-5 rounded-xl bg-gradient-to-r from-accent-purple/5 to-accent-blue/5 border border-white/5">
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-accent-purple mb-2">Why this matters</h2>
+      <p class="text-gray-300 leading-relaxed">
+        Every other file in the repo — simulation scripts, figures, tests — exists only to produce data that ultimately appears inside this HTML file. Issues #3 through #8 each add one section to this scaffold. <strong class="text-white">Nothing else can proceed until this file exists.</strong> This is the foundational deliverable upon which the entire project's communication layer depends.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ TL;DR ═══════════════════════════ -->
+  <section id="tldr" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-accent-cyan/10 text-accent-cyan flex items-center justify-center text-sm">◆</span>
+      TL;DR
+    </h2>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <!-- Card 1 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="w-10 h-10 rounded-lg bg-rydberg/10 flex items-center justify-center mb-4">
+          <span class="text-rydberg text-lg">🏗</span>
+        </div>
+        <h3 class="font-semibold text-white text-sm mb-2">The Scaffold</h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          All shared infrastructure — CSS (Tailwind dark theme), JavaScript (interactive features), MathJax v3 for equations — that every subsequent issue depends on.
+        </p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="w-10 h-10 rounded-lg bg-ground/10 flex items-center justify-center mb-4">
+          <span class="text-ground text-lg">📖</span>
+        </div>
+        <h3 class="font-semibold text-white text-sm mb-2">Introduction Section</h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Defines Rydberg states, qubit encoding, the blockade effect, and the CZ gate for a physicist who hasn't worked with Rydberg atoms before.
+        </p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="w-10 h-10 rounded-lg bg-blockade/10 flex items-center justify-center mb-4">
+          <span class="text-blockade text-lg">⚛</span>
+        </div>
+        <h3 class="font-semibold text-white text-sm mb-2">Ideal Gate Section</h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Walks through the π–2π–π pulse protocol, shows a truth table, embeds a population-dynamics figure, and confirms fidelity = 1 in the ideal case.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-6 p-4 rounded-lg bg-surface-700 border border-white/5">
+      <p class="text-sm text-gray-400 leading-relaxed">
+        <strong class="text-white">Tooling recommendations:</strong> Tailwind CSS framework via CDN, MathJax v3 for equation rendering, and a suite of interactive features (text-selection quoting, comment threads, collapsible derivations) matching the repository owner's conventions in the sibling <code class="text-accent-blue bg-accent-blue/10 px-1 py-0.5 rounded text-xs">Finite_blockade_pulse</code> project.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ DECISION MAP ═══════════════════════════ -->
+  <section id="decisions" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-accent-blue/10 text-accent-blue flex items-center justify-center text-sm">⊞</span>
+      Decision Map
+    </h2>
+
+    <p class="text-gray-400 mb-8 leading-relaxed">
+      Every significant design choice, the alternatives considered, and the rationale for each recommendation.
+    </p>
+
+    <!-- Decision Flow SVG -->
+    <div class="mb-10 overflow-x-auto">
+      <svg viewBox="0 0 900 520" class="w-full max-w-4xl mx-auto" style="min-width: 600px;" aria-label="Decision flow diagram showing five key architectural decisions">
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="#60a5fa" />
+          </marker>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Central node -->
+        <rect x="340" y="10" width="220" height="50" rx="12" fill="#1e2030" stroke="#60a5fa" stroke-width="1.5"/>
+        <text x="450" y="40" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600">site/index.html</text>
+
+        <!-- Lines from center to decisions -->
+        <line x1="380" y1="60" x2="130" y2="120" stroke="#60a5fa" stroke-width="1" marker-end="url(#arrow)" opacity="0.5"/>
+        <line x1="420" y1="60" x2="310" y2="120" stroke="#60a5fa" stroke-width="1" marker-end="url(#arrow)" opacity="0.5"/>
+        <line x1="450" y1="60" x2="450" y2="120" stroke="#60a5fa" stroke-width="1" marker-end="url(#arrow)" opacity="0.5"/>
+        <line x1="480" y1="60" x2="590" y2="120" stroke="#60a5fa" stroke-width="1" marker-end="url(#arrow)" opacity="0.5"/>
+        <line x1="520" y1="60" x2="770" y2="120" stroke="#60a5fa" stroke-width="1" marker-end="url(#arrow)" opacity="0.5"/>
+
+        <!-- Decision 1: Math Rendering -->
+        <g>
+          <rect x="30" y="120" width="200" height="42" rx="8" fill="#1e2030" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="130" y="146" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="600">Math Rendering</text>
+          <!-- Chosen -->
+          <rect x="30" y="175" width="200" height="34" rx="6" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1"/>
+          <text x="130" y="196" text-anchor="middle" fill="#22d3ee" font-size="11">✓ MathJax v3 via CDN</text>
+          <!-- Rejected -->
+          <rect x="30" y="218" width="200" height="28" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="130" y="236" text-anchor="middle" fill="#6b7280" font-size="10">✗ Hand-rendered HTML</text>
+          <rect x="30" y="252" width="200" height="28" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="130" y="270" text-anchor="middle" fill="#6b7280" font-size="10">✗ KaTeX</text>
+          <!-- Rationale -->
+          <rect x="10" y="292" width="240" height="48" rx="6" fill="rgba(167,139,250,0.05)"/>
+          <text x="130" y="310" text-anchor="middle" fill="#9ca3af" font-size="9">~20 complex equations; AGENTS.md</text>
+          <text x="130" y="325" text-anchor="middle" fill="#9ca3af" font-size="9">specifies MathJax; async loading ~100KB</text>
+        </g>
+
+        <!-- Decision 2: CSS Framework -->
+        <g>
+          <rect x="250" y="120" width="160" height="42" rx="8" fill="#1e2030" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="330" y="146" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="600">CSS Framework</text>
+          <rect x="250" y="175" width="160" height="34" rx="6" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1"/>
+          <text x="330" y="196" text-anchor="middle" fill="#22d3ee" font-size="11">✓ Tailwind CDN + dark</text>
+          <rect x="250" y="218" width="160" height="28" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="330" y="236" text-anchor="middle" fill="#6b7280" font-size="10">✗ Custom / other framework</text>
+          <rect x="240" y="260" width="180" height="36" rx="6" fill="rgba(167,139,250,0.05)"/>
+          <text x="330" y="282" text-anchor="middle" fill="#9ca3af" font-size="9">Matches sibling repo convention</text>
+        </g>
+
+        <!-- Decision 3: Figures -->
+        <g>
+          <rect x="370" y="120" width="160" height="42" rx="8" fill="#1e2030" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="450" y="146" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="600">Figure Embedding</text>
+          <rect x="370" y="175" width="160" height="34" rx="6" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1"/>
+          <text x="450" y="196" text-anchor="middle" fill="#22d3ee" font-size="11">✓ Relative path</text>
+          <rect x="370" y="218" width="160" height="28" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="450" y="236" text-anchor="middle" fill="#6b7280" font-size="10">✗ Base64 inline</text>
+          <rect x="355" y="260" width="190" height="36" rx="6" fill="rgba(167,139,250,0.05)"/>
+          <text x="450" y="282" text-anchor="middle" fill="#9ca3af" font-size="9">Small HTML, figures regeneratable</text>
+        </g>
+
+        <!-- Decision 4: Section Template -->
+        <g>
+          <rect x="510" y="120" width="160" height="42" rx="8" fill="#1e2030" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="590" y="146" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="600">Section Template</text>
+          <rect x="510" y="175" width="160" height="34" rx="6" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1"/>
+          <text x="590" y="196" text-anchor="middle" fill="#22d3ee" font-size="11">✓ Rigid HTML comment</text>
+          <rect x="510" y="218" width="160" height="28" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="590" y="236" text-anchor="middle" fill="#6b7280" font-size="10">✗ Freeform per section</text>
+          <rect x="495" y="260" width="190" height="36" rx="6" fill="rgba(167,139,250,0.05)"/>
+          <text x="590" y="282" text-anchor="middle" fill="#9ca3af" font-size="9">5 issues (#3-#7) need identical structure</text>
+        </g>
+
+        <!-- Decision 5: Interactive Features -->
+        <g>
+          <rect x="670" y="120" width="200" height="42" rx="8" fill="#1e2030" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="770" y="146" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="600">Interactive Features</text>
+          <rect x="670" y="175" width="200" height="34" rx="6" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1"/>
+          <text x="770" y="196" text-anchor="middle" fill="#22d3ee" font-size="11">✓ Full notebook-style</text>
+          <rect x="670" y="218" width="200" height="28" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="770" y="236" text-anchor="middle" fill="#6b7280" font-size="10">✗ Minimal (collapsibles only)</text>
+          <rect x="660" y="260" width="220" height="48" rx="6" fill="rgba(167,139,250,0.05)"/>
+          <text x="770" y="278" text-anchor="middle" fill="#9ca3af" font-size="9">Sibling project already uses these;</text>
+          <text x="770" y="293" text-anchor="middle" fill="#9ca3af" font-size="9">interactive-html-explainer skill matches</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(30, 370)">
+          <text x="0" y="12" fill="#6b7280" font-size="10" font-weight="600">LEGEND</text>
+          <rect x="0" y="22" width="14" height="14" rx="3" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1"/>
+          <text x="22" y="33" fill="#9ca3af" font-size="10">Chosen option</text>
+          <rect x="120" y="22" width="14" height="14" rx="3" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+          <text x="142" y="33" fill="#9ca3af" font-size="10">Rejected alternative</text>
+          <rect x="270" y="22" width="14" height="14" rx="3" fill="rgba(167,139,250,0.05)"/>
+          <text x="292" y="33" fill="#9ca3af" font-size="10">Rationale</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Decision Table (full detail) -->
+    <details class="group">
+      <summary class="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-white py-3 px-4 rounded-lg bg-surface-700 border border-white/5">
+        Full decision table with details
+      </summary>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-gray-500 border-b border-white/10">
+              <th class="py-3 px-4">Decision</th>
+              <th class="py-3 px-4">Chosen</th>
+              <th class="py-3 px-4">Rejected</th>
+              <th class="py-3 px-4">Rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="decision-row border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Math rendering</td>
+              <td class="py-3 px-4 text-accent-cyan">MathJax v3 via CDN</td>
+              <td class="py-3 px-4 text-gray-500">(A) Hand-rendered HTML spans with CSS; (B) KaTeX</td>
+              <td class="py-3 px-4 text-gray-400">~20 complex equations (Lindblad operators, fidelity formulas, scaling laws). Hand-rendering is fragile. MathJax v3 is async, loads only needed modules (~100 KB), and is specified in <code class="text-xs bg-white/5 px-1 rounded">AGENTS.md</code>.</td>
+            </tr>
+            <tr class="decision-row border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">CSS framework</td>
+              <td class="py-3 px-4 text-accent-cyan">Tailwind CSS via CDN, dark theme</td>
+              <td class="py-3 px-4 text-gray-500">Custom CSS or another framework</td>
+              <td class="py-3 px-4 text-gray-400">Matches the owner's existing convention in sibling repo <code class="text-xs bg-white/5 px-1 rounded">Finite_blockade_pulse</code>, which has three explainer HTML files using Tailwind + dark palette.</td>
+            </tr>
+            <tr class="decision-row border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Figure embedding</td>
+              <td class="py-3 px-4 text-accent-cyan">Relative path <code class="text-xs bg-white/5 px-1 rounded">../figures/</code></td>
+              <td class="py-3 px-4 text-gray-500">Base64 inline embedding</td>
+              <td class="py-3 px-4 text-gray-400">Relative paths keep the HTML small and debuggable. Figures are regeneratable from scripts — no portability concern.</td>
+            </tr>
+            <tr class="decision-row border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Section template</td>
+              <td class="py-3 px-4 text-accent-cyan">Rigid, documented HTML comment template</td>
+              <td class="py-3 px-4 text-gray-500">Freeform per error source</td>
+              <td class="py-3 px-4 text-gray-400">Five error-source issues (#3–#7) must each add an identically structured section. A commented template prevents structural drift.</td>
+            </tr>
+            <tr class="decision-row">
+              <td class="py-3 px-4 font-medium text-white">Interactive features</td>
+              <td class="py-3 px-4 text-accent-cyan">Full notebook-style</td>
+              <td class="py-3 px-4 text-gray-500">Minimal (collapsibles only)</td>
+              <td class="py-3 px-4 text-gray-400">The owner's sibling project already uses these features. The <code class="text-xs bg-white/5 px-1 rounded">interactive-html-explainer</code> skill produces exactly this type of file.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <!-- ═══════════════════════════ STATE MACHINE TRACE ═══════════════════════════ -->
+  <section id="state-machine" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-accent-purple/10 text-accent-purple flex items-center justify-center text-sm">⟳</span>
+      State Machine Trace
+    </h2>
+
+    <p class="text-gray-400 mb-6 leading-relaxed">
+      How the triage investigation proceeded, step by step.
+    </p>
+
+    <!-- Glossary -->
+    <div class="mb-8 p-4 rounded-xl bg-surface-700 border border-white/5">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Key terms</h3>
+      <div class="grid sm:grid-cols-3 gap-3 text-sm">
+        <div>
+          <span class="text-accent-blue font-medium">Triage branch</span>
+          <p class="text-gray-500 text-xs mt-0.5">A Git branch created to investigate an issue, gather evidence, and write a plan — without making code changes.</p>
+        </div>
+        <div>
+          <span class="text-accent-blue font-medium">Resolve branch</span>
+          <p class="text-gray-500 text-xs mt-0.5">A subsequent branch where the plan is actually implemented. Not yet created for this issue.</p>
+        </div>
+        <div>
+          <span class="text-accent-blue font-medium">Skill</span>
+          <p class="text-gray-500 text-xs mt-0.5">A reusable recipe in the Pi extension framework that knows how to produce a particular kind of artifact.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- States -->
+    <div class="space-y-1">
+      <div class="flex gap-4 items-start step-connector">
+        <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue text-sm font-bold shrink-0 relative z-10">1</div>
+        <div class="pb-6">
+          <h4 class="text-white font-semibold text-sm">Issue intake</h4>
+          <p class="text-gray-400 text-sm mt-1">Issue #2 was read. It requests an HTML scaffold plus two content sections.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start step-connector">
+        <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue text-sm font-bold shrink-0 relative z-10">2</div>
+        <div class="pb-6">
+          <h4 class="text-white font-semibold text-sm">Dependency check</h4>
+          <p class="text-gray-400 text-sm mt-1">Issue #1 (population dynamics figure) identified as a blocker. The file <code class="text-xs bg-white/5 px-1 rounded">figures/population_dynamics.png</code> exists locally and was visually verified as correct, but is <span class="text-blockade font-medium">untracked in Git</span> (issue #1 hasn't been merged yet).</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start step-connector">
+        <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue text-sm font-bold shrink-0 relative z-10">3</div>
+        <div class="pb-6">
+          <h4 class="text-white font-semibold text-sm">Convention survey</h4>
+          <p class="text-gray-400 text-sm mt-1">Three existing HTML explainer files in the sibling repo <code class="text-xs bg-white/5 px-1 rounded">Finite_blockade_pulse</code> were inspected. Conventions catalogued: Tailwind CDN, dark theme, color palette, interactive features.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start step-connector">
+        <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue text-sm font-bold shrink-0 relative z-10">4</div>
+        <div class="pb-6">
+          <h4 class="text-white font-semibold text-sm">AGENTS.md review</h4>
+          <p class="text-gray-400 text-sm mt-1">Project instructions specify MathJax for equations. Tension noted: sibling repo uses hand-rendered math, but AGENTS.md says MathJax. <span class="text-ground">Resolved in favor of MathJax</span> because of equation volume.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start step-connector">
+        <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue text-sm font-bold shrink-0 relative z-10">5</div>
+        <div class="pb-6">
+          <h4 class="text-white font-semibold text-sm">Skill match</h4>
+          <p class="text-gray-400 text-sm mt-1">The <code class="text-xs bg-white/5 px-1 rounded">interactive-html-explainer</code> skill identified as the right build tool, since it produces exactly the kind of file described.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start step-connector">
+        <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue text-sm font-bold shrink-0 relative z-10">6</div>
+        <div class="pb-6">
+          <h4 class="text-white font-semibold text-sm">Plan written</h4>
+          <p class="text-gray-400 text-sm mt-1">A six-step implementation plan recorded with explicit scope boundaries: <em>do not create error-source sections, do not modify Python code</em>.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start">
+        <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 text-sm font-bold shrink-0 relative z-10">7</div>
+        <div class="pb-4">
+          <h4 class="text-white font-semibold text-sm">Triage committed</h4>
+          <p class="text-gray-400 text-sm mt-1">Plan saved to <code class="text-xs bg-white/5 px-1 rounded">docs/triage/issue-2.md</code> on branch <code class="text-xs bg-white/5 px-1 rounded">triage/issue-2-2-html-scaffold-introduction-ideal-gate-section</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ EVIDENCE ═══════════════════════════ -->
+  <section id="evidence" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-ground/10 text-ground flex items-center justify-center text-sm">🔍</span>
+      Evidence
+    </h2>
+    <p class="text-gray-400 mb-8 leading-relaxed">
+      Concrete observations from the repository and its environment — not guesses.
+    </p>
+
+    <div class="space-y-4">
+      <!-- Evidence 1 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-rydberg/10 text-rydberg text-xs font-bold">1</span>
+          <h3 class="font-semibold text-white text-sm">The file does not exist yet</h3>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          <code class="text-xs bg-white/5 px-1 rounded">site/index.html</code> is entirely new. The pre-fix signal is that <code class="text-xs bg-white/5 px-1 rounded">open site/index.html</code> fails.
+        </p>
+      </div>
+
+      <!-- Evidence 2 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-rydberg/10 text-rydberg text-xs font-bold">2</span>
+          <h3 class="font-semibold text-white text-sm">Population dynamics figure verified</h3>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed mb-3">
+          The file <code class="text-xs bg-white/5 px-1 rounded">figures/population_dynamics.png</code> exists locally (untracked). The triager describes its content in detail:
+        </p>
+        <div class="bg-surface-900 rounded-lg p-4 text-sm text-gray-300 leading-relaxed border border-white/5">
+          Rydberg population vs. time for all four two-qubit basis states during the π–2π–π protocol, with three pulse regions marked by dashed lines. Behavior of each state is consistent with the physics:
+          <ul class="mt-2 space-y-1 ml-4">
+            <li class="flex items-start gap-2"><span class="text-ground">•</span> <span>\(|00\rangle\) flat — no Rydberg excitation</span></li>
+            <li class="flex items-start gap-2"><span class="text-rydberg">•</span> <span>\(|01\rangle\) shows a 2π rotation</span></li>
+            <li class="flex items-start gap-2"><span class="text-accent-blue">•</span> <span>\(|10\rangle\) and \(|11\rangle\) show π round-trips with \(|11\rangle\) exhibiting blockade</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Evidence 3 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-rydberg/10 text-rydberg text-xs font-bold">3</span>
+          <h3 class="font-semibold text-white text-sm">Sibling-repo conventions catalogued</h3>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed mb-3">
+          Extracted from <code class="text-xs bg-white/5 px-1 rounded">Finite_blockade_pulse/czz-cole-gate-explainer.html</code>:
+        </p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="bg-surface-900 rounded-lg p-3 border border-white/5">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Framework</span>
+            <p class="text-sm text-gray-300 mt-1">Tailwind via <code class="text-xs bg-white/5 px-1 rounded">cdn.tailwindcss.com</code></p>
+          </div>
+          <div class="bg-surface-900 rounded-lg p-3 border border-white/5">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Theme</span>
+            <p class="text-sm text-gray-300 mt-1">Dark mode, background <code class="text-xs bg-white/5 px-1 rounded">#0f1117</code></p>
+          </div>
+          <div class="bg-surface-900 rounded-lg p-3 border border-white/5">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Semantic colors</span>
+            <div class="flex items-center gap-3 mt-1.5">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rydberg"></span><span class="text-xs text-gray-400">rydberg</span></span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-ground"></span><span class="text-xs text-gray-400">ground</span></span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blockade"></span><span class="text-xs text-gray-400">blockade</span></span>
+            </div>
+          </div>
+          <div class="bg-surface-900 rounded-lg p-3 border border-white/5">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Interactive features</span>
+            <p class="text-sm text-gray-300 mt-1">Selection toolbar, comment modal, notes panel, localStorage</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evidence 4 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-rydberg/10 text-rydberg text-xs font-bold">4</span>
+          <h3 class="font-semibold text-white text-sm">AGENTS.md specification</h3>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          AGENTS.md says to use <em>"MathJax CDN for equations."</em> This conflicts with the sibling repo's hand-rendered math but is the better choice for this project due to equation complexity (~20 complex formulas including Lindblad operators).
+        </p>
+      </div>
+
+      <!-- Evidence 5 -->
+      <div class="card-hover rounded-xl bg-surface-700 border border-white/5 p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-rydberg/10 text-rydberg text-xs font-bold">5</span>
+          <h3 class="font-semibold text-white text-sm">Skill availability</h3>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          The <code class="text-xs bg-white/5 px-1 rounded">interactive-html-explainer</code> skill exists at a known filesystem path and is documented. It produces files matching the needed conventions.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ IMPLEMENTATION PLAN ═══════════════════════════ -->
+  <section id="implementation" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-blockade/10 text-blockade flex items-center justify-center text-sm">⚙</span>
+      Implementation Plan
+    </h2>
+    <p class="text-gray-400 mb-4 leading-relaxed">
+      Six ordered steps. Only one file is created: <code class="text-accent-blue bg-accent-blue/10 px-1.5 py-0.5 rounded text-sm">site/index.html</code>.
+    </p>
+
+    <div class="space-y-6">
+
+      <!-- Step 1 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 bg-surface-600/50 border-b border-white/5">
+          <span class="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center text-accent-blue text-sm font-bold">1</span>
+          <h3 class="font-semibold text-white text-sm">Load the <code class="bg-white/5 px-1.5 rounded text-xs">interactive-html-explainer</code> skill</h3>
+        </div>
+        <div class="p-5">
+          <p class="text-sm text-gray-400 leading-relaxed">
+            This skill (a reusable build recipe in the Pi extension framework) handles the boilerplate for single-file interactive HTML explainers. It is the starting point rather than writing from scratch.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 bg-surface-600/50 border-b border-white/5">
+          <span class="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center text-accent-blue text-sm font-bold">2</span>
+          <h3 class="font-semibold text-white text-sm">Set up infrastructure in <code class="bg-white/5 px-1.5 rounded text-xs">site/index.html</code></h3>
+        </div>
+        <div class="p-5">
+          <p class="text-sm text-gray-400 leading-relaxed mb-4">
+            This is the "scaffold" layer — built once and never modified by downstream issues.
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider text-gray-500 border-b border-white/10">
+                  <th class="py-2 px-3">Component</th>
+                  <th class="py-2 px-3">Details</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-400">
+                <tr class="border-b border-white/5">
+                  <td class="py-2 px-3 text-white font-medium">Tailwind CSS</td>
+                  <td class="py-2 px-3">CDN link, dark-mode class on <code class="text-xs bg-white/5 px-1 rounded">&lt;html&gt;</code>, custom color config matching sibling repo</td>
+                </tr>
+                <tr class="border-b border-white/5">
+                  <td class="py-2 px-3 text-white font-medium">MathJax v3</td>
+                  <td class="py-2 px-3">Async CDN load of <code class="text-xs bg-white/5 px-1 rounded">tex-chtml.js</code>; inline math <code class="text-xs bg-white/5 px-1 rounded">\( ... \)</code>, display math <code class="text-xs bg-white/5 px-1 rounded">$$ ... $$</code></td>
+                </tr>
+                <tr class="border-b border-white/5">
+                  <td class="py-2 px-3 text-white font-medium">Semantic colors</td>
+                  <td class="py-2 px-3">
+                    <span class="text-rydberg">rydberg: #f472b6</span>,
+                    <span class="text-ground">ground: #34d399</span>,
+                    <span class="text-blockade">blockade: #fbbf24</span>
+                  </td>
+                </tr>
+                <tr class="border-b border-white/5">
+                  <td class="py-2 px-3 text-white font-medium">Interactive JS</td>
+                  <td class="py-2 px-3">Text-selection toolbar, comment modal, notes panel with localStorage, "Copy as LLM prompt" button</td>
+                </tr>
+                <tr class="border-b border-white/5">
+                  <td class="py-2 px-3 text-white font-medium">Navigation</td>
+                  <td class="py-2 px-3">Sticky top bar with page title, "Notes" button, "Print" button</td>
+                </tr>
+                <tr class="border-b border-white/5">
+                  <td class="py-2 px-3 text-white font-medium">Footer</td>
+                  <td class="py-2 px-3">Export notes, print/PDF, credit line</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-3 text-white font-medium">Print styles</td>
+                  <td class="py-2 px-3"><code class="text-xs bg-white/5 px-1 rounded">@media print</code> CSS switching to white background / black text</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 bg-surface-600/50 border-b border-white/5">
+          <span class="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center text-accent-blue text-sm font-bold">3</span>
+          <h3 class="font-semibold text-white text-sm">Write Introduction section (H-01)</h3>
+        </div>
+        <div class="p-5">
+          <p class="text-sm text-gray-400 leading-relaxed mb-4">
+            Defines all physics terms from scratch for a QM-literate reader without Rydberg background:
+          </p>
+          <ol class="space-y-2 text-sm text-gray-300 ml-4 list-decimal list-outside">
+            <li><strong class="text-rydberg">Rydberg states</strong> — high-n atomic excitations, huge dipole, strong interactions</li>
+            <li><strong class="text-ground">Qubit encoding</strong> — \(|0\rangle\) = dark state, \(|1\rangle\) = \(|g\rangle\), \(|r\rangle\) is auxiliary</li>
+            <li><strong class="text-white">Two-photon excitation</strong> — 780 nm + 480 nm for ⁸⁷Rb</li>
+            <li><strong class="text-blockade">Blockade effect</strong> — interaction energy \(U \gg \Omega\) prevents double excitation</li>
+            <li><strong class="text-accent-purple">CZ gate definition</strong> — \(\text{diag}(1, 1, 1, -1)\) with truth table</li>
+          </ol>
+          <div class="mt-4 p-3 rounded-lg bg-surface-900 border border-white/5">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Key equations</span>
+            <p class="text-sm text-gray-300 mt-2">Van der Waals interaction: \(V(R) = -C_6/R^6\), blockade strength, CZ matrix.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 bg-surface-600/50 border-b border-white/5">
+          <span class="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center text-accent-blue text-sm font-bold">4</span>
+          <h3 class="font-semibold text-white text-sm">Write Ideal Gate section (H-02)</h3>
+        </div>
+        <div class="p-5">
+          <ol class="space-y-2 text-sm text-gray-300 ml-4 list-decimal list-outside">
+            <li>Three colored step-boxes for the π–2π–π protocol</li>
+            <li>Truth table showing phases for all four input states</li>
+            <li>Embedded figure: <code class="text-xs bg-white/5 px-1 rounded">&lt;img src="../figures/population_dynamics.png"&gt;</code> with descriptive caption</li>
+            <li>Statement that ideal fidelity \(F = 1.0\) (infidelity \(< 10^{-10}\))</li>
+            <li>Collapsible <code class="text-xs bg-white/5 px-1 rounded">&lt;details&gt;</code> block explaining the Pedersen average gate fidelity formula</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 bg-surface-600/50 border-b border-white/5">
+          <span class="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center text-accent-blue text-sm font-bold">5</span>
+          <h3 class="font-semibold text-white text-sm">Insert error-source template as HTML comment</h3>
+        </div>
+        <div class="p-5">
+          <p class="text-sm text-gray-400 leading-relaxed mb-3">
+            A commented-out HTML block showing the exact structure that issues #3–#7 must follow:
+          </p>
+          <div class="relative group">
+            <pre class="bg-surface-900 text-gray-300 p-4 rounded-lg text-xs leading-relaxed overflow-x-auto border border-white/5"><code>&lt;section id="sec-error-{name}"&gt;
+  → &lt;h2&gt;
+  → callout
+  → physics paragraphs
+  → MathJax formula box
+  → collapsible derivation
+  → figure
+  → takeaway
+&lt;/section&gt;</code></pre>
+            <button onclick="copyCode(this)" aria-label="Copy code to clipboard" class="copy-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-white/10 text-gray-400 text-xs px-2 py-1 rounded">Copy</button>
+          </div>
+          <p class="text-sm text-gray-500 mt-3">This prevents structural drift across five independent implementation efforts.</p>
+        </div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 bg-surface-600/50 border-b border-white/5">
+          <span class="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center text-accent-blue text-sm font-bold">6</span>
+          <h3 class="font-semibold text-white text-sm">Manual testing</h3>
+        </div>
+        <div class="p-5">
+          <p class="text-sm text-gray-400 leading-relaxed">
+            See <a href="#validation" class="text-accent-blue hover:underline">Validation</a> section below.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ VALIDATION ═══════════════════════════ -->
+  <section id="validation" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-green-500/10 text-green-400 flex items-center justify-center text-sm">✓</span>
+      Validation
+    </h2>
+    <p class="text-gray-400 mb-6 leading-relaxed">
+      There are no automated tests for this deliverable — it is a presentation artifact. Validation is manual.
+    </p>
+
+    <div class="overflow-x-auto mb-8">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="text-left text-xs uppercase tracking-wider text-gray-500 border-b border-white/10">
+            <th class="py-3 px-4">Check</th>
+            <th class="py-3 px-4">Method</th>
+            <th class="py-3 px-4">Expected Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-white/5 decision-row">
+            <td class="py-3 px-4 text-white font-medium">Renders in browsers</td>
+            <td class="py-3 px-4 text-gray-400">Open <code class="text-xs bg-white/5 px-1 rounded">site/index.html</code> in Chrome, Firefox, Safari</td>
+            <td class="py-3 px-4 text-gray-400">All content visible, styled correctly</td>
+          </tr>
+          <tr class="border-b border-white/5 decision-row">
+            <td class="py-3 px-4 text-white font-medium">MathJax works</td>
+            <td class="py-3 px-4 text-gray-400">Ctrl+F for <code class="text-xs bg-white/5 px-1 rounded">\frac</code> in the rendered page</td>
+            <td class="py-3 px-4 text-gray-400">0 results (all LaTeX compiled to rendered math)</td>
+          </tr>
+          <tr class="border-b border-white/5 decision-row">
+            <td class="py-3 px-4 text-white font-medium">Collapsibles work</td>
+            <td class="py-3 px-4 text-gray-400">Click a <code class="text-xs bg-white/5 px-1 rounded">&lt;details&gt;</code> / <code class="text-xs bg-white/5 px-1 rounded">&lt;summary&gt;</code> block</td>
+            <td class="py-3 px-4 text-gray-400">Content expands/collapses smoothly</td>
+          </tr>
+          <tr class="border-b border-white/5 decision-row">
+            <td class="py-3 px-4 text-white font-medium">Mobile responsive</td>
+            <td class="py-3 px-4 text-gray-400">Resize viewport to 375px width</td>
+            <td class="py-3 px-4 text-gray-400">No horizontal scrollbar</td>
+          </tr>
+          <tr class="border-b border-white/5 decision-row">
+            <td class="py-3 px-4 text-white font-medium">Selection toolbar</td>
+            <td class="py-3 px-4 text-gray-400">Select any text</td>
+            <td class="py-3 px-4 text-gray-400">Floating toolbar appears with "Ask about this"</td>
+          </tr>
+          <tr class="border-b border-white/5 decision-row">
+            <td class="py-3 px-4 text-white font-medium">Figure loads</td>
+            <td class="py-3 px-4 text-gray-400">Scroll to ideal gate section</td>
+            <td class="py-3 px-4 text-gray-400"><code class="text-xs bg-white/5 px-1 rounded">population_dynamics.png</code> visible with caption</td>
+          </tr>
+          <tr class="decision-row">
+            <td class="py-3 px-4 text-white font-medium">File size sanity</td>
+            <td class="py-3 px-4 text-gray-400"><code class="text-xs bg-white/5 px-1 rounded">wc -l site/index.html</code></td>
+            <td class="py-3 px-4 text-gray-400">300+ lines (non-trivial)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Signals -->
+    <div class="grid sm:grid-cols-2 gap-4 mb-6">
+      <div class="p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+        <span class="text-xs font-semibold uppercase tracking-wider text-red-400">Pre-fix signal</span>
+        <p class="text-sm text-gray-300 mt-2"><code class="text-xs bg-white/5 px-1 rounded">site/index.html</code> does not exist.</p>
+      </div>
+      <div class="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+        <span class="text-xs font-semibold uppercase tracking-wider text-green-400">Post-fix signal</span>
+        <p class="text-sm text-gray-300 mt-2">Dark-themed page with two content sections, rendered equations, working interactivity.</p>
+      </div>
+    </div>
+
+    <!-- Edge cases -->
+    <details class="group">
+      <summary class="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-white py-3 px-4 rounded-lg bg-surface-700 border border-white/5">
+        Negative / edge-case validation
+      </summary>
+      <div class="mt-3 space-y-3">
+        <div class="callout-warning rounded-lg p-4">
+          <p class="text-sm text-gray-300 leading-relaxed">
+            <strong class="text-blockade">No network:</strong> MathJax and Tailwind CDN fail → page is unstyled with raw LaTeX. This is <strong>expected and accepted</strong> per AGENTS.md (CDN is the only external dependency).
+          </p>
+        </div>
+        <div class="callout-info rounded-lg p-4">
+          <p class="text-sm text-gray-300 leading-relaxed">
+            <strong class="text-accent-blue">Figure path resolution:</strong> <code class="text-xs bg-white/5 px-1 rounded">../figures/population_dynamics.png</code> must resolve when opened as a <code class="text-xs bg-white/5 px-1 rounded">file://</code> URL and when served from a local HTTP server. Both should be tested.
+          </p>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ═══════════════════════════ CAVEATS ═══════════════════════════ -->
+  <section id="caveats" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-blockade/10 text-blockade flex items-center justify-center text-sm">⚠</span>
+      Caveats &amp; Open Questions
+    </h2>
+
+    <div class="space-y-4">
+      <!-- Caveat 1 -->
+      <div class="callout-danger rounded-xl p-5">
+        <h3 class="font-semibold text-white text-sm mb-2 flex items-center gap-2">
+          <span class="text-red-400">●</span> Blocker dependency
+        </h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Issue #1 must be merged before this issue's figure reference works in the committed repo. The figure exists locally and has been visually verified, but it is <strong class="text-red-400">untracked</strong> — meaning someone could implement issue #2 before #1 is merged and the figure would load locally but fail for others who clone the repo.
+        </p>
+      </div>
+
+      <!-- Caveat 2 -->
+      <div class="callout-warning rounded-xl p-5">
+        <h3 class="font-semibold text-white text-sm mb-2 flex items-center gap-2">
+          <span class="text-blockade">●</span> AGENTS.md vs. sibling-repo tension
+        </h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          AGENTS.md says "MathJax CDN." The sibling repo uses hand-rendered math. The triage resolves this in favor of MathJax, but this is a judgment call that could be overridden.
+        </p>
+      </div>
+
+      <!-- Caveat 3 -->
+      <div class="callout-warning rounded-xl p-5">
+        <h3 class="font-semibold text-white text-sm mb-2 flex items-center gap-2">
+          <span class="text-blockade">●</span> CDN fragility
+        </h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Both Tailwind and MathJax are loaded from CDNs. If CDNs are unreachable, the page degrades to unstyled HTML with raw LaTeX. The triage accepts this as a known limitation. Pinning CDN versions is recommended but not mandated.
+        </p>
+      </div>
+
+      <!-- Caveat 4 -->
+      <div class="callout-warning rounded-xl p-5">
+        <h3 class="font-semibold text-white text-sm mb-2 flex items-center gap-2">
+          <span class="text-blockade">●</span> Template drift risk
+        </h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Five separate error-source issues (#3–#7) will each add a section to this scaffold. The HTML-comment template is the only mechanism preventing structural inconsistency. There is no automated linting or schema enforcement.
+        </p>
+      </div>
+
+      <!-- Caveat 5 -->
+      <div class="callout-info rounded-xl p-5">
+        <h3 class="font-semibold text-white text-sm mb-2 flex items-center gap-2">
+          <span class="text-accent-blue">●</span> No automated regression tests
+        </h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          The triage explicitly states "No <code class="text-xs bg-white/5 px-1 rounded">pytest</code> for HTML — validation is visual." If the project later wants CI, an HTML validator or Lighthouse check would need to be added separately.
+        </p>
+      </div>
+
+      <!-- Caveat 6 -->
+      <div class="callout-info rounded-xl p-5">
+        <h3 class="font-semibold text-white text-sm mb-2 flex items-center gap-2">
+          <span class="text-accent-blue">●</span> Triage document is truncated
+        </h3>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          The MathJax configuration block in Section 6, Step 2 is cut off mid-sentence (<code class="text-xs bg-white/5 px-1 rounded">MathJax = { tex: { inlineMath: [['</code>). The full configuration is inferrable from the earlier discussion (inline delimiters <code class="text-xs bg-white/5 px-1 rounded">\(…\)</code>, display delimiters <code class="text-xs bg-white/5 px-1 rounded">$$…$$</code>), but the triage document is technically incomplete at that point.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ REVISION TARGETS ═══════════════════════════ -->
+  <section id="revision" class="pt-12 pb-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-accent-purple/10 text-accent-purple flex items-center justify-center text-sm">✎</span>
+      Revision Targets
+    </h2>
+    <p class="text-gray-400 mb-8 leading-relaxed">
+      The specific decisions a human reviewer might reasonably want to change or annotate.
+    </p>
+
+    <div class="space-y-4">
+      <!-- RT 1 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-1">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">1</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">MathJax v3 vs. KaTeX vs. hand-rendered math</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage chose MathJax v3. KaTeX renders faster but supports fewer LaTeX commands. A reviewer might prefer KaTeX if equation complexity is lower than estimated, or hand-rendered math if CDN dependence is unacceptable.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 2 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-2">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">2</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">Relative figure paths vs. Base64 embedding</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage chose relative paths (<code class="text-xs bg-white/5 px-1 rounded">../figures/</code>). A reviewer concerned about single-file portability (e.g., emailing the HTML) might prefer Base64.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 3 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-3">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">3</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">Full interactive notebook features vs. minimal HTML</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage includes text-selection quoting, comment threads, notes panel, and "Copy as LLM prompt." A reviewer might consider this over-engineered for what is essentially a physics explainer document.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 4 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-4">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">4</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">Scope of the Introduction section</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage specifies that two-photon excitation details (780 nm + 480 nm wavelengths, counter-propagating beams, Doppler suppression) should be included. A reviewer might consider this too detailed for an introduction, or not detailed enough.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 5 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-5">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">5</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">Rigid error-source template vs. flexible sections</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage mandates a fixed HTML structure for all five error channels. A reviewer might argue that different error sources (e.g., spontaneous emission vs. Doppler broadening) have different enough pedagogical needs to warrant flexibility.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 6 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-6">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">6</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">CDN version pinning</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage recommends but does not require pinning Tailwind and MathJax CDN versions. A reviewer might want to make this mandatory.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 7 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-7">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">7</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">Dependency ordering</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The triage says issue #1 must be merged first. A reviewer might decide to proceed in parallel, using a placeholder image and swapping in the real figure later.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RT 8 -->
+      <div class="rounded-xl bg-surface-700 border border-white/5 p-5 card-hover" id="rt-8">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-purple/15 text-accent-purple text-xs font-bold shrink-0 mt-0.5">8</span>
+          <div>
+            <h3 class="font-semibold text-white text-sm mb-2">Semantic color palette</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">
+              The specific hex values for <span class="text-rydberg">rydberg</span>, <span class="text-ground">ground</span>, and <span class="text-blockade">blockade</span> are copied from the sibling repo. A reviewer might want different colors for this project.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+<footer class="border-t border-white/5 py-8 mt-4">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <p class="text-xs text-gray-600">
+      Generated by <code class="text-gray-500">/explain-triage</code> · Triage analysis of GitHub issue #2
+    </p>
+    <button onclick="window.print()" aria-label="Print this page" class="no-print px-4 py-2 text-xs rounded-md bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
+      🖨 Print / Save as PDF
+    </button>
+  </div>
+</footer>
+
+<!-- Vanilla JS -->
+<script>
+// Copy code button
+function copyCode(btn) {
+  const pre = btn.closest('.relative').querySelector('code');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('text-green-400');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('text-green-400');
+    }, 1500);
+  });
+}
+
+// Close TOC panel when clicking outside
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('toc-panel');
+  if (!panel.classList.contains('hidden') && !panel.contains(e.target) && !e.target.closest('[aria-label="Toggle table of contents"]')) {
+    panel.classList.add('hidden');
+  }
+});
+
+// Close TOC when a link inside it is clicked
+document.querySelectorAll('#toc-panel a').forEach(link => {
+  link.addEventListener('click', () => {
+    document.getElementById('toc-panel').classList.add('hidden');
+  });
+});
+</script>
+
+</body>
+</html>
