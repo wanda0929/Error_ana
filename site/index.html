@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rydberg CZ Gate Error Analysis — Introduction and Ideal Gate</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --dark-950: #090b10;
+      --dark-900: #0f1117;
+      --dark-800: #161822;
+      --dark-700: #1e2030;
+      --dark-600: #262940;
+      --dark-500: #343854;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --faint: #6b7280;
+      --accent-300: #93c5fd;
+      --accent-400: #60a5fa;
+      --accent-500: #3b82f6;
+      --ground: #34d399;
+      --rydberg: #f472b6;
+      --blockade: #fbbf24;
+      --danger: #f87171;
+      --success: #4ade80;
+      --radius: 18px;
+      --shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--dark-900);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.18), transparent 32rem),
+        radial-gradient(circle at 85% 12%, rgba(244, 114, 182, 0.13), transparent 28rem),
+        linear-gradient(180deg, var(--dark-900), var(--dark-950));
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.68;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--accent-300); }
+    strong { color: #ffffff; }
+    code { color: #d1d5db; background: rgba(255,255,255,0.06); padding: 0.08rem 0.28rem; border-radius: 0.35rem; }
+    svg { max-width: 100%; height: auto; }
+    img { max-width: 100%; height: auto; display: block; }
+
+    .shell {
+      width: min(100% - 2rem, 72rem);
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.8rem 0;
+      margin-bottom: 4rem;
+      background: rgba(15, 17, 23, 0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .topbar-title {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .button {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0.8rem;
+      color: var(--text);
+      background: rgba(30, 32, 48, 0.88);
+      padding: 0.55rem 0.8rem;
+      font: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(96, 165, 250, 0.55);
+      background: rgba(38, 41, 64, 0.96);
+    }
+
+    .button.primary {
+      background: var(--accent-500);
+      border-color: var(--accent-500);
+      color: white;
+      font-weight: 700;
+    }
+
+    .hero {
+      margin-bottom: 5rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      color: var(--accent-300);
+      background: rgba(96, 165, 250, 0.10);
+      padding: 0.32rem 0.68rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0;
+      color: #ffffff;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      margin-top: 1.2rem;
+      max-width: 58rem;
+      font-size: clamp(2.45rem, 7vw, 5.2rem);
+    }
+
+    .subtitle {
+      max-width: 54rem;
+      margin: 1.4rem 0 0;
+      color: #d1d5db;
+      font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    section {
+      margin-bottom: 5rem;
+      scroll-margin-top: 6rem;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 0.85rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .section-number {
+      color: var(--accent-400);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    .section-heading h2 {
+      font-size: clamp(1.65rem, 4vw, 2.4rem);
+    }
+
+    .lead {
+      color: #d1d5db;
+      font-size: 1.08rem;
+      max-width: 62rem;
+      margin: 0 0 1.2rem;
+    }
+
+    .card {
+      background: rgba(30, 32, 48, 0.78);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+    }
+
+    .card.highlight {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(30, 32, 48, 0.72));
+      border-color: rgba(96, 165, 250, 0.32);
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .card p { margin: 0; color: #d1d5db; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .term-grid {
+      margin: 1.5rem 0;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 0.75rem;
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.74rem;
+      font-weight: 850;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid currentColor;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .tag.ground { color: var(--ground); }
+    .tag.rydberg { color: var(--rydberg); }
+    .tag.blockade { color: var(--blockade); }
+    .tag.accent { color: var(--accent-300); }
+
+    .callout {
+      border-left: 4px solid var(--blockade);
+      background: rgba(251, 191, 36, 0.10);
+      border-radius: 1rem;
+      padding: 1rem 1.1rem;
+      color: #fef3c7;
+      margin: 1.3rem 0;
+    }
+
+    .math-box {
+      overflow-x: auto;
+      margin: 1.2rem 0;
+      padding: 1rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(96, 165, 250, 0.20);
+      background: rgba(9, 11, 16, 0.55);
+      color: #f9fafb;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 1rem;
+      background: rgba(22, 24, 34, 0.58);
+      margin: 1.2rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 36rem;
+      font-size: 0.94rem;
+    }
+
+    th, td {
+      padding: 0.72rem 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(255,255,255,0.035);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    td.phase { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #ffffff; }
+
+    .steps {
+      display: grid;
+      gap: 1rem;
+      margin: 1.4rem 0;
+    }
+
+    .step-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: start;
+      background: rgba(30, 32, 48, 0.78);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-left: 4px solid var(--accent-400);
+      border-radius: 1rem;
+      padding: 1rem;
+    }
+
+    .step-card:nth-child(1), .step-card:nth-child(3) { border-left-color: var(--rydberg); }
+    .step-card:nth-child(2) { border-left-color: var(--blockade); }
+
+    .step-badge {
+      display: inline-grid;
+      place-items: center;
+      width: 3.1rem;
+      height: 3.1rem;
+      border-radius: 999px;
+      background: rgba(96, 165, 250, 0.12);
+      color: var(--accent-300);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .step-card p { margin: 0.35rem 0 0; color: #d1d5db; }
+
+    details {
+      margin: 1.2rem 0;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 1rem;
+      background: rgba(22, 24, 34, 0.72);
+      overflow: hidden;
+    }
+
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0.95rem 1.1rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 0.5rem;
+      color: var(--accent-400);
+      transition: transform 0.15s ease;
+    }
+
+    details[open] summary::before { transform: rotate(90deg); }
+
+    .details-body {
+      padding: 0 1.1rem 1.1rem;
+      color: #d1d5db;
+    }
+
+    .figure-card {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius);
+      background: rgba(9, 11, 16, 0.42);
+    }
+
+    .figure-card img {
+      width: 100%;
+      border-radius: 0.85rem;
+      background: #ffffff;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    figcaption {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .fallback-note {
+      color: var(--blockade);
+      font-size: 0.86rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .comment-anchor {
+      margin-top: 0.7rem;
+      color: var(--faint);
+      background: transparent;
+      border: 0;
+      padding: 0;
+      font: inherit;
+      font-size: 0.84rem;
+      cursor: pointer;
+    }
+
+    .comment-anchor:hover { color: var(--accent-300); }
+
+    .comments {
+      margin-top: 0.8rem;
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .comment-card {
+      border-left: 3px solid var(--accent-500);
+      background: rgba(22, 24, 34, 0.75);
+      border-radius: 0.85rem;
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .comment-card blockquote {
+      margin: 0 0 0.55rem;
+      padding-left: 0.7rem;
+      border-left: 2px solid rgba(255,255,255,0.18);
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .comment-card p { margin: 0; color: #d1d5db; }
+
+    .footer {
+      border-top: 1px solid rgba(255,255,255,0.09);
+      padding-top: 2rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 1.5rem;
+      transform: translateX(-50%);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      background: var(--accent-500);
+      color: white;
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow);
+      transition: opacity 0.16s ease;
+      font-weight: 750;
+      font-size: 0.9rem;
+    }
+
+    #toast.show { opacity: 1; }
+
+    #selection-toolbar {
+      position: fixed;
+      z-index: 1000;
+      display: none;
+      gap: 0.4rem;
+      align-items: center;
+      padding: 0.35rem;
+      border-radius: 0.8rem;
+      background: rgba(38, 41, 64, 0.98);
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: var(--shadow);
+    }
+
+    #selection-toolbar.visible { display: flex; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(0,0,0,0.68);
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      width: min(100%, 38rem);
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 1.2rem;
+      background: var(--dark-700);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-head h3 { font-size: 1.1rem; }
+
+    .close-button {
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      font-size: 1.8rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .quote-box {
+      max-height: 9rem;
+      overflow-y: auto;
+      border-left: 4px solid var(--accent-400);
+      border-radius: 0.75rem;
+      background: rgba(9, 11, 16, 0.55);
+      padding: 0.8rem;
+      color: #d1d5db;
+      font-style: italic;
+      font-size: 0.92rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 7rem;
+      resize: vertical;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0.9rem;
+      background: rgba(9, 11, 16, 0.62);
+      color: var(--text);
+      padding: 0.85rem;
+      font: inherit;
+      font-size: 0.94rem;
+      outline: none;
+    }
+
+    textarea:focus { border-color: var(--accent-400); }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+
+    #notes-panel {
+      position: fixed;
+      top: 0;
+      right: min(-420px, -92vw);
+      z-index: 1500;
+      width: min(420px, 92vw);
+      height: 100vh;
+      overflow-y: auto;
+      border-left: 1px solid rgba(255,255,255,0.12);
+      background: var(--dark-800);
+      box-shadow: var(--shadow);
+      padding: 1.2rem;
+      transition: right 0.22s ease;
+    }
+
+    #notes-panel.open { right: 0; }
+
+    .notes-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .notes-list {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .notes-section-title {
+      color: var(--accent-300);
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 1rem 0 0.45rem;
+    }
+
+    .energy-level text { font-family: ui-sans-serif, system-ui, sans-serif; }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 1rem, 72rem); padding-top: 0.5rem; }
+      .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 2rem; }
+      .hero-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .step-card { grid-template-columns: 1fr; }
+      .footer { flex-direction: column; }
+      .modal-actions { grid-template-columns: 1fr; }
+      table { min-width: 34rem; }
+    }
+
+    @media print {
+      :root { color-scheme: light; }
+      body { background: white !important; color: black !important; }
+      .topbar, .comment-anchor, .comments, #selection-toolbar, #notes-panel, #toast, .modal-overlay, .no-print { display: none !important; }
+      .shell { width: 100%; padding: 0; }
+      .card, .figure-card, details, .math-box, .table-wrap { background: white !important; border-color: #d1d5db !important; box-shadow: none !important; }
+      h1, h2, h3, h4, strong { color: black !important; }
+      p, li, td, figcaption, .lead, .subtitle, .details-body { color: #111827 !important; }
+      section { break-inside: avoid; }
+      details { break-inside: avoid; }
+      details:not([open]) .details-body { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <noscript>
+    <div class="shell">
+      <div class="callout">JavaScript is disabled. The physics text remains readable, but MathJax rendering, saved notes, and selection comments require JavaScript.</div>
+    </div>
+  </noscript>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="selection-toolbar" class="no-print" aria-hidden="true">
+    <button class="button primary" type="button" onclick="openCommentModal()">💬 Ask about this</button>
+  </div>
+
+  <div id="comment-modal" class="modal-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="comment-modal-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="comment-modal-title">Ask about this passage</h3>
+        <button class="close-button" type="button" onclick="closeModal()" aria-label="Close">×</button>
+      </div>
+      <div id="modal-quote" class="quote-box"></div>
+      <div id="modal-section-label" class="section-label"></div>
+      <textarea id="modal-question" placeholder="Write your question or note here…"></textarea>
+      <div class="modal-actions">
+        <button class="button primary" type="button" onclick="postComment()">Save note</button>
+        <button class="button" type="button" onclick="copyAsLLM()">Copy as LLM prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <aside id="notes-panel" class="no-print" aria-label="Saved notes panel">
+    <div class="notes-head">
+      <h3>My Questions &amp; Notes</h3>
+      <button class="close-button" type="button" onclick="toggleNotes()" aria-label="Close notes">×</button>
+    </div>
+    <div class="grid-2">
+      <button class="button primary" type="button" onclick="exportAllNotes()">Export Markdown</button>
+      <button class="button" type="button" onclick="clearAllNotes()">Clear all</button>
+    </div>
+    <div id="notes-list" class="notes-list"></div>
+  </aside>
+
+  <div id="main-content" class="shell">
+    <nav class="topbar no-print" aria-label="Page controls">
+      <div class="topbar-title">Rydberg CZ Gate Error Analysis · ⁸⁷Rb–⁸⁷Rb</div>
+      <div class="topbar-actions">
+        <a class="button" href="#sec-introduction">Introduction</a>
+        <a class="button" href="#sec-ideal-gate">Ideal gate</a>
+        <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
+        <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <span class="eyebrow">π–2π–π blockade protocol</span>
+      <h1>A Rydberg CZ gate, from first contact to the ideal sanity check</h1>
+      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the reader-facing scaffold and the ideal-gate baseline that every error budget section will build on.</p>
+
+      <div class="hero-grid">
+        <div class="card highlight">
+          <span class="tag blockade">Key idea</span>
+          <p>If one atom is already in a Rydberg state, it shifts the other atom's Rydberg transition out of resonance. That conditional shift is the whole machine: it makes one branch of the wavefunction follow a different path and acquire the controlled phase.</p>
+        </div>
+        <div class="card">
+          <span class="tag accent">Target</span>
+          <div class="math-box" aria-label="Controlled-Z target unitary">
+            $$U_{\mathrm{CZ}} = \mathrm{diag}(1,1,1,-1)$$
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="sec-introduction" data-section="Introduction">
+      <div class="section-heading">
+        <span class="section-number">01</span>
+        <h2>Introduction: what is being controlled?</h2>
+      </div>
+
+      <p class="lead">A <strong>Rydberg CZ gate</strong> is a controlled phase gate implemented by temporarily promoting one or both atoms to a highly excited state. The qubit begins and ends in ordinary ground hyperfine states; the Rydberg state is only a temporary workbench.</p>
+
+      <div class="grid-2 term-grid">
+        <article class="card">
+          <span class="tag rydberg">Rydberg state</span>
+          <h3>A huge atom, briefly</h3>
+          <p>A Rydberg state has a large principal quantum number $n$. For ⁸⁷Rb we use $|r\rangle = |70S_{1/2}\rangle$. Its orbital radius scales roughly as $n^2$, so nearby Rydberg atoms interact much more strongly than ground-state atoms.</p>
+        </article>
+
+        <article class="card">
+          <span class="tag ground">Qubit encoding</span>
+          <h3>Only $|1\rangle$ talks to the laser</h3>
+          <p>The computational state $|0\rangle$ is dark: it does not couple to the Rydberg excitation lasers. The computational state $|1\rangle$ is represented here by a laser-coupled ground state $|g\rangle$. The auxiliary state $|r\rangle$ is not part of the final qubit.</p>
+        </article>
+
+        <article class="card">
+          <span class="tag accent">Two-photon excitation</span>
+          <h3>780 nm plus 480 nm</h3>
+          <p>Rubidium is driven from $5S$ toward $70S$ using a two-photon path through $5P_{3/2}$: a 780 nm lower leg and a 480 nm upper leg. Counter-propagating beams give a smaller effective wavevector, which helps suppress Doppler dephasing later.</p>
+        </article>
+
+        <article class="card">
+          <span class="tag blockade">Blockade</span>
+          <h3>A conditional detuning</h3>
+          <p>When atom 1 is in $|r\rangle$, it shifts atom 2's Rydberg level by an interaction energy $U$. If $U \gg \Omega$, where $\Omega$ is the Rabi frequency, atom 2 is effectively off-resonant and cannot be excited. That is the blockade regime.</p>
+        </article>
+      </div>
+
+      <figure class="figure-card">
+        <svg class="energy-level" viewBox="0 0 760 360" role="img" aria-labelledby="energy-title energy-desc">
+          <title id="energy-title">Two-photon Rydberg excitation and blockade shift</title>
+          <desc id="energy-desc">Energy-level sketch showing dark qubit state zero, laser-coupled ground state g, intermediate state e, Rydberg state r, and blockade shift U.</desc>
+          <rect x="0" y="0" width="760" height="360" rx="18" fill="#0b0d13"/>
+          <text x="380" y="35" fill="#e5e7eb" font-size="18" text-anchor="middle" font-weight="700">One atom: qubit state plus auxiliary Rydberg level</text>
+
+          <line x1="90" y1="285" x2="320" y2="285" stroke="#34d399" stroke-width="4"/>
+          <text x="70" y="291" fill="#34d399" font-size="18" text-anchor="end">|g⟩ ≡ |1⟩</text>
+          <text x="206" y="315" fill="#9ca3af" font-size="13" text-anchor="middle">laser-coupled qubit state</text>
+
+          <line x1="90" y1="325" x2="320" y2="325" stroke="#6b7280" stroke-width="3"/>
+          <text x="70" y="331" fill="#9ca3af" font-size="18" text-anchor="end">|0⟩</text>
+          <text x="206" y="348" fill="#6b7280" font-size="12" text-anchor="middle">dark state</text>
+
+          <line x1="105" y1="175" x2="305" y2="175" stroke="#60a5fa" stroke-width="3" stroke-dasharray="7 7"/>
+          <text x="70" y="181" fill="#93c5fd" font-size="18" text-anchor="end">|e⟩</text>
+          <text x="205" y="160" fill="#9ca3af" font-size="12" text-anchor="middle">virtual intermediate state 5P₃/₂</text>
+
+          <line x1="90" y1="72" x2="320" y2="72" stroke="#f472b6" stroke-width="4"/>
+          <text x="70" y="78" fill="#f472b6" font-size="18" text-anchor="end">|r⟩</text>
+          <text x="206" y="55" fill="#9ca3af" font-size="13" text-anchor="middle">Rydberg state 70S₁/₂</text>
+
+          <path d="M205 282 C170 245 172 218 204 179" fill="none" stroke="#34d399" stroke-width="3" marker-end="url(#arrow)"/>
+          <text x="145" y="238" fill="#34d399" font-size="13" text-anchor="middle">780 nm</text>
+          <path d="M215 171 C255 135 258 108 220 75" fill="none" stroke="#60a5fa" stroke-width="3" marker-end="url(#arrow)"/>
+          <text x="280" y="126" fill="#93c5fd" font-size="13" text-anchor="middle">480 nm</text>
+
+          <line x1="510" y1="72" x2="690" y2="72" stroke="#f472b6" stroke-width="4"/>
+          <line x1="510" y1="125" x2="690" y2="125" stroke="#fbbf24" stroke-width="4"/>
+          <path d="M704 75 L704 122" stroke="#fbbf24" stroke-width="2" marker-start="url(#arrow-up)" marker-end="url(#arrow)"/>
+          <text x="604" y="55" fill="#f472b6" font-size="14" text-anchor="middle">atom 2 Rydberg level</text>
+          <text x="604" y="151" fill="#fbbf24" font-size="14" text-anchor="middle">shifted by nearby |r⟩</text>
+          <text x="726" y="103" fill="#fbbf24" font-size="18" text-anchor="middle">U</text>
+          <text x="602" y="211" fill="#d1d5db" font-size="15" text-anchor="middle">If atom 1 is already Rydberg,</text>
+          <text x="602" y="235" fill="#d1d5db" font-size="15" text-anchor="middle">atom 2's transition is detuned.</text>
+          <text x="602" y="266" fill="#fbbf24" font-size="16" text-anchor="middle" font-weight="700">For U ≫ Ω, excitation is blocked.</text>
+
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+            </marker>
+            <marker id="arrow-up" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 10 0 L 0 5 L 10 10 z" fill="#fbbf24"/>
+            </marker>
+          </defs>
+        </svg>
+        <figcaption>Energy-level sketch. The dark state $|0\rangle$ does not participate; $|1\rangle$ is temporarily mapped through $|r\rangle$ and then brought back.</figcaption>
+      </figure>
+
+      <p>The dominant Rydberg interaction for the chosen $S$ state is a van der Waals interaction. Up to the sign convention for $C_6$, the blockade strength is the magnitude of that shift:</p>
+
+      <div class="math-box">
+        $$V(R) = -\frac{C_6}{R^6}, \qquad U = |V(R)| = \frac{C_6}{R^6}, \qquad U \gg \Omega.$$
+      </div>
+
+      <p>The target two-qubit operation is a controlled-$Z$ gate. It leaves $|00\rangle$, $|01\rangle$, and $|10\rangle$ unchanged, and flips the phase of $|11\rangle$ by $\pi$:</p>
+
+      <div class="table-wrap" aria-label="Controlled-Z truth table">
+        <table>
+          <thead>
+            <tr><th>Input state</th><th>Output state</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="phase">$|00\rangle$</td><td class="phase">$+|00\rangle$</td><td>Both qubits are dark.</td></tr>
+            <tr><td class="phase">$|01\rangle$</td><td class="phase">$+|01\rangle$</td><td>No controlled phase because qubit 1 is 0.</td></tr>
+            <tr><td class="phase">$|10\rangle$</td><td class="phase">$+|10\rangle$</td><td>No controlled phase because qubit 2 is 0.</td></tr>
+            <tr><td class="phase">$|11\rangle$</td><td class="phase">$-|11\rangle$</td><td>Both qubits are 1, so the branch receives a $\pi$ phase.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>Why the blockade is conditional logic</summary>
+        <div class="details-body">
+          <p>A resonant Rabi pulse flips $|g\rangle \leftrightarrow |r\rangle$ at angular rate $\Omega$. But if the target Rydberg level is shifted by $U$, the same laser is detuned. The excitation probability under a detuned drive is suppressed roughly by $\Omega^2/(\Omega^2+U^2)$. In the blockade regime $U \gg \Omega$, the blocked branch stays put while the unblocked branch completes its rotation.</p>
+        </div>
+      </details>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-introduction', 'Introduction')">💬 Ask about this section</button>
+      <div id="comments-sec-introduction" class="comments no-print"></div>
+    </section>
+
+    <section id="sec-ideal-gate" data-section="Ideal gate">
+      <div class="section-heading">
+        <span class="section-number">02</span>
+        <h2>The ideal π–2π–π gate</h2>
+      </div>
+
+      <p class="lead">The ideal gate is deliberately austere: no decay, no Doppler shift, no amplitude noise, and perfect blockade. This is the sanity check. If the ideal model does not produce a unit-fidelity CZ up to local $Z$ phases, the error analysis downstream is just numerology in a lab coat.</p>
+
+      <div class="steps" aria-label="Ideal Rydberg CZ pulse protocol">
+        <article class="step-card">
+          <div class="step-badge">π₁</div>
+          <div>
+            <h3>Step 1 — π-pulse on atom 1</h3>
+            <p>If atom 1 is in $|1\rangle \equiv |g\rangle$, the pulse transfers it to $|r\rangle$. If atom 1 is in $|0\rangle$, it is dark and nothing happens.</p>
+            <div class="math-box">$$|g\rangle_1 \rightarrow |r\rangle_1, \qquad t_\pi = \frac{\pi}{\Omega}.$$</div>
+          </div>
+        </article>
+
+        <article class="step-card">
+          <div class="step-badge">2π₂</div>
+          <div>
+            <h3>Step 2 — 2π-pulse on atom 2</h3>
+            <p>If atom 1 is not Rydberg, atom 2 performs a full $|g\rangle \rightarrow |r\rangle \rightarrow |g\rangle$ cycle and acquires the usual $-1$ phase. If atom 1 is already in $|r\rangle$, atom 2 is blockaded and does not rotate.</p>
+            <div class="math-box">$$|g\rangle_2 \rightarrow |r\rangle_2 \rightarrow |g\rangle_2, \qquad t_{2\pi} = \frac{2\pi}{\Omega}.$$</div>
+          </div>
+        </article>
+
+        <article class="step-card">
+          <div class="step-badge">π₁</div>
+          <div>
+            <h3>Step 3 — π-pulse on atom 1</h3>
+            <p>The final pulse returns any population in atom 1's Rydberg level to the computational state $|1\rangle$. The total pulse duration is $t_g = 4\pi/\Omega$.</p>
+            <div class="math-box">$$|r\rangle_1 \rightarrow |g\rangle_1.$$</div>
+          </div>
+        </article>
+      </div>
+
+      <div class="callout">
+        The raw diagonal produced by the textbook sequence is $\mathrm{diag}(1,-1,-1,-1)$. That is not a bug. Single-qubit $Z$ phases convert it into the canonical $\mathrm{CZ}=\mathrm{diag}(1,1,1,-1)$, and the entangling phase is exactly $\pi$.
+      </div>
+
+      <h3>Branch-by-branch phase accounting</h3>
+      <div class="table-wrap" aria-label="Raw ideal gate branch phases">
+        <table>
+          <thead>
+            <tr><th>Input</th><th>Pulse path</th><th>Raw phase</th><th>After local Z correction</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="phase">$|00\rangle$</td>
+              <td>Both atoms are dark.</td>
+              <td class="phase">$+1$</td>
+              <td class="phase">$+1$</td>
+            </tr>
+            <tr>
+              <td class="phase">$|01\rangle$</td>
+              <td>Atom 2 completes a $2\pi$ rotation.</td>
+              <td class="phase">$-1$</td>
+              <td class="phase">$+1$</td>
+            </tr>
+            <tr>
+              <td class="phase">$|10\rangle$</td>
+              <td>Atom 1 completes the two $\pi$ pulses; atom 2 is dark.</td>
+              <td class="phase">$-1$</td>
+              <td class="phase">$+1$</td>
+            </tr>
+            <tr>
+              <td class="phase">$|11\rangle$</td>
+              <td>Atom 1 goes to $|r\rangle$; atom 2's $2\pi$ pulse is blocked.</td>
+              <td class="phase">$-1$</td>
+              <td class="phase">$-1$</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="math-box">
+        $$U_{\mathrm{raw}} = \mathrm{diag}(1,-1,-1,-1) = (Z_1\otimes Z_2)\,U_{\mathrm{CZ}},$$
+        $$\phi_{\mathrm{ent}} = \phi_{11}-\phi_{10}-\phi_{01}+\phi_{00}=\pi \pmod{2\pi}.$$
+      </div>
+
+      <figure class="figure-card" aria-labelledby="pop-figure-title">
+        <h3 id="pop-figure-title">Population dynamics during the ideal sequence</h3>
+        <img src="../figures/population_dynamics.png" alt="Ideal Rydberg blockade CZ population dynamics for input states |00>, |01>, |10>, and |11>." onerror="showPopulationFallback(this)">
+        <div id="population-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/population_dynamics.png</code>. Showing an inline schematic fallback; run the ideal-figure script to regenerate the publication PNG.</p>
+          <svg viewBox="0 0 760 390" role="img" aria-label="Schematic population dynamics fallback">
+            <rect x="0" y="0" width="760" height="390" rx="18" fill="#f8fafc"/>
+            <text x="380" y="32" fill="#111827" font-size="18" text-anchor="middle" font-weight="700">Ideal Rydberg population dynamics</text>
+            <line x1="80" y1="320" x2="700" y2="320" stroke="#374151" stroke-width="2"/>
+            <line x1="80" y1="60" x2="80" y2="320" stroke="#374151" stroke-width="2"/>
+            <text x="390" y="370" fill="#374151" font-size="14" text-anchor="middle">time</text>
+            <text x="25" y="198" fill="#374151" font-size="14" text-anchor="middle" transform="rotate(-90 25 198)">total Rydberg population</text>
+            <text x="70" y="324" fill="#374151" font-size="12" text-anchor="end">0</text>
+            <text x="70" y="65" fill="#374151" font-size="12" text-anchor="end">1</text>
+            <line x1="235" y1="55" x2="235" y2="322" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 6"/>
+            <line x1="545" y1="55" x2="545" y2="322" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 6"/>
+            <text x="158" y="53" fill="#111827" font-size="14" text-anchor="middle">π₁</text>
+            <text x="390" y="53" fill="#111827" font-size="14" text-anchor="middle">2π₂</text>
+            <text x="622" y="53" fill="#111827" font-size="14" text-anchor="middle">π₁</text>
+            <polyline points="80,320 700,320" fill="none" stroke="#4b5563" stroke-width="4"/>
+            <path d="M80 320 C120 320 160 320 235 320 C285 320 327 60 390 60 C453 60 495 320 545 320 C610 320 655 320 700 320" fill="none" stroke="#2563eb" stroke-width="4"/>
+            <path d="M80 320 C120 290 160 60 235 60 L545 60 C610 60 650 295 700 320" fill="none" stroke="#dc2626" stroke-width="4"/>
+            <path d="M80 320 C120 290 160 60 235 60 L545 60 C610 60 650 295 700 320" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-dasharray="9 6"/>
+            <rect x="540" y="84" width="150" height="102" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+            <line x1="556" y1="108" x2="590" y2="108" stroke="#4b5563" stroke-width="4"/><text x="600" y="113" fill="#111827" font-size="13">|00⟩</text>
+            <line x1="556" y1="132" x2="590" y2="132" stroke="#2563eb" stroke-width="4"/><text x="600" y="137" fill="#111827" font-size="13">|01⟩</text>
+            <line x1="556" y1="156" x2="590" y2="156" stroke="#dc2626" stroke-width="4"/><text x="600" y="161" fill="#111827" font-size="13">|10⟩</text>
+            <line x1="556" y1="180" x2="590" y2="180" stroke="#16a34a" stroke-width="2.4" stroke-dasharray="9 6"/><text x="600" y="185" fill="#111827" font-size="13">|11⟩</text>
+          </svg>
+        </div>
+        <figcaption>The figure tracks total Rydberg population for each computational input. $|00\rangle$ stays dark; $|01\rangle$ moves only during the atom-2 $2\pi$ pulse; $|10\rangle$ and $|11\rangle$ move atom 1 to $|r\rangle$ during the middle segment. In the $|11\rangle$ branch, atom 2 is blocked.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag ground">Ideal fidelity</span>
+          <h3>$F_{\mathrm{avg}} = 1.0000000000$</h3>
+          <p>With local $Z$ phases accounted for, the ideal sequence matches CZ to numerical precision: infidelity below $10^{-10}$.</p>
+        </div>
+        <div class="card">
+          <span class="tag rydberg">Gate duration</span>
+          <h3>$t_g = 4\pi/\Omega$</h3>
+          <p>The three pulses have areas $\pi$, $2\pi$, and $\pi$. Faster $\Omega$ shortens the gate, but later sections will show which errors fight back.</p>
+        </div>
+        <div class="card">
+          <span class="tag blockade">Rydberg exposure</span>
+          <h3>$T_R = 7\pi/(4\Omega)$</h3>
+          <p>This effective occupation time sets the leading decay-error scale once finite Rydberg lifetime is included.</p>
+        </div>
+      </div>
+
+      <details>
+        <summary>Pedersen average gate fidelity used for the ideal check</summary>
+        <div class="details-body">
+          <p>For a coherent two-qubit process, the average gate fidelity is computed from $M=U_{\mathrm{target}}^\dagger U_{\mathrm{actual}}$ with Hilbert-space dimension $d=4$:</p>
+          <div class="math-box">
+            $$F_{\mathrm{avg}} = \frac{\mathrm{Tr}(M^\dagger M)+|\mathrm{Tr}(M)|^2}{d(d+1)}.$$
+          </div>
+          <p>Global phase drops out. The displayed ideal value also removes the known local $Z$ phases, because those are single-qubit frame choices rather than entangling errors.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Why $\mathrm{diag}(1,-1,-1,-1)$ is a CZ, not a failure</summary>
+        <div class="details-body">
+          <p>Two single-qubit $Z$ operations have diagonal $Z_1\otimes Z_2=\mathrm{diag}(1,-1,-1,1)$. Multiplying this by the canonical CZ gives</p>
+          <div class="math-box">
+            $$(Z_1\otimes Z_2)\,\mathrm{CZ}=\mathrm{diag}(1,-1,-1,-1).$$
+          </div>
+          <p>Local phases can be calibrated away in software or absorbed into later pulses. The nonlocal invariant is the inclusion-exclusion phase $\phi_{11}-\phi_{10}-\phi_{01}+\phi_{00}$, and here it equals $\pi$.</p>
+        </div>
+      </details>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-ideal-gate', 'Ideal gate')">💬 Ask about this section</button>
+      <div id="comments-sec-ideal-gate" class="comments no-print"></div>
+    </section>
+
+    <!--
+      ERROR-SOURCE SECTION TEMPLATE FOR ISSUES #3-#7
+
+      Each error source should be inserted after the ideal-gate section using this structure.
+      Keep the section shape fixed so the reader can compare channels without relearning the page.
+
+      <section id="sec-error-{name}" data-section="Error: {Title}" class="error-section">
+        <div class="section-heading">
+          <span class="section-number">0X</span>
+          <h2>{Title}</h2>
+        </div>
+
+        <div class="callout">One-sentence physics summary.</div>
+
+        Physics explanation: 2-3 paragraphs, plain language. Define every new term.
+
+        <div class="math-box">
+          Analytical formula in MathJax.
+        </div>
+
+        <details>
+          <summary>Derivation sketch</summary>
+          <div class="details-body">
+            Key perturbative steps, not just a citation.
+          </div>
+        </details>
+
+        <figure class="figure-card">
+          <img src="../figures/fidelity_vs_{param}.png" alt="Fidelity versus {parameter} for {title}">
+          <figcaption>Numerical dots + analytical curve + Evered operating point.</figcaption>
+        </figure>
+
+        <div class="card highlight">
+          <strong>Takeaway:</strong> This error dominates when ____.
+        </div>
+      </section>
+    -->
+
+    <footer class="footer">
+      <p>This scaffold covers the introduction and ideal-gate baseline. Error-source sections, the combined budget, and the summary table are intentionally left to the later issue slices.</p>
+      <div class="topbar-actions no-print">
+        <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
+        <button class="button" type="button" onclick="window.print()">Save as PDF</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction and Ideal Gate';
+    const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
+    let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
+
+    function showPopulationFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('population-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function loadComments() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { version: 1, comments: [] };
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.version === 1 && Array.isArray(parsed.comments)) return parsed;
+      } catch (_) {}
+      return { version: 1, comments: [] };
+    }
+
+    function saveComments(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function escapeHTML(value) {
+      const div = document.createElement('div');
+      div.textContent = value == null ? '' : String(value);
+      return div.innerHTML;
+    }
+
+    function getSectionFromNode(node) {
+      let el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      while (el && el.id !== 'main-content') {
+        if (el.dataset && el.dataset.section) return { id: el.id, title: el.dataset.section };
+        el = el.parentElement;
+      }
+      return { id: 'sec-introduction', title: 'Introduction' };
+    }
+
+    function showToolbar(x, y) {
+      const toolbar = document.getElementById('selection-toolbar');
+      const vw = window.innerWidth;
+      let left = Math.min(Math.max(10, x - 70), vw - 190);
+      let top = y - 52;
+      if (top < 10) top = y + 22;
+      toolbar.style.left = `${left}px`;
+      toolbar.style.top = `${top}px`;
+      toolbar.classList.add('visible');
+      toolbar.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideToolbar() {
+      const toolbar = document.getElementById('selection-toolbar');
+      toolbar.classList.remove('visible');
+      toolbar.setAttribute('aria-hidden', 'true');
+    }
+
+    document.addEventListener('pointerup', () => {
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const selectedText = selection ? selection.toString().trim() : '';
+        const main = document.getElementById('main-content');
+        if (!selectedText || selectedText.length < 3 || !selection.anchorNode || !main.contains(selection.anchorNode)) {
+          hideToolbar();
+          return;
+        }
+        const section = getSectionFromNode(selection.anchorNode);
+        currentSelection = { text: selectedText, sectionId: section.id, sectionTitle: section.title };
+        const range = selection.rangeCount ? selection.getRangeAt(0) : null;
+        if (!range) return;
+        const rect = range.getBoundingClientRect();
+        showToolbar(rect.left + rect.width / 2, rect.top + window.scrollY);
+      }, 12);
+    });
+
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection();
+      if (!selection || !selection.toString().trim()) hideToolbar();
+    });
+
+    function openCommentModal() {
+      hideToolbar();
+      const modal = document.getElementById('comment-modal');
+      const quote = document.getElementById('modal-quote');
+      const label = document.getElementById('modal-section-label');
+      const textarea = document.getElementById('modal-question');
+      if (currentSelection.text) {
+        quote.textContent = currentSelection.text;
+        quote.style.display = 'block';
+      } else {
+        quote.textContent = '';
+        quote.style.display = 'none';
+      }
+      label.textContent = `Section: ${currentSelection.sectionTitle}`;
+      textarea.value = '';
+      modal.classList.add('open');
+      setTimeout(() => textarea.focus(), 80);
+    }
+
+    function openSectionComment(sectionId, sectionTitle) {
+      currentSelection = { text: '', sectionId, sectionTitle };
+      openCommentModal();
+    }
+
+    function closeModal() {
+      document.getElementById('comment-modal').classList.remove('open');
+    }
+
+    document.getElementById('comment-modal').addEventListener('click', (event) => {
+      if (event.target.classList.contains('modal-overlay')) closeModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeModal();
+        document.getElementById('notes-panel').classList.remove('open');
+      }
+    });
+
+    function postComment() {
+      const textarea = document.getElementById('modal-question');
+      const question = textarea.value.trim();
+      if (!question) {
+        showToast('Write a note first');
+        return;
+      }
+      const data = loadComments();
+      data.comments.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        sectionId: currentSelection.sectionId,
+        sectionTitle: currentSelection.sectionTitle,
+        quote: currentSelection.text,
+        question,
+        timestamp: Date.now()
+      });
+      saveComments(data);
+      renderComments();
+      closeModal();
+      showToast('Saved ✓');
+    }
+
+    async function writeClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      textarea.remove();
+    }
+
+    function copyAsLLM() {
+      const question = document.getElementById('modal-question').value.trim();
+      if (!question) {
+        showToast('Write a question first');
+        return;
+      }
+      let prompt = `Context from "${PAGE_TITLE}", section "${currentSelection.sectionTitle}":\n\n`;
+      if (currentSelection.text) prompt += `> ${currentSelection.text}\n\n`;
+      prompt += `My question: ${question}`;
+      writeClipboard(prompt).then(() => showToast('Copied ✓')).catch(() => showToast('Clipboard blocked'));
+    }
+
+    function commentHTML(comment) {
+      const when = new Date(comment.timestamp).toLocaleString();
+      return `
+        <article class="comment-card" data-comment-id="${escapeHTML(comment.id)}">
+          <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:start;margin-bottom:0.4rem;">
+            <span style="color:var(--faint);font-size:0.78rem;" title="${escapeHTML(when)}">${timeAgo(comment.timestamp)}</span>
+            <button class="comment-anchor" type="button" onclick="deleteComment('${escapeHTML(comment.id)}')">Delete</button>
+          </div>
+          ${comment.quote ? `<blockquote>${escapeHTML(comment.quote)}</blockquote>` : ''}
+          <p>${escapeHTML(comment.question)}</p>
+        </article>`;
+    }
+
+    function renderComments() {
+      const data = loadComments();
+      document.querySelectorAll('[id^="comments-"]').forEach((container) => {
+        const sectionId = container.id.replace('comments-', '');
+        const sectionComments = data.comments.filter((comment) => comment.sectionId === sectionId);
+        container.innerHTML = sectionComments.length
+          ? sectionComments.map(commentHTML).join('')
+          : '<p style="color:var(--faint);font-size:0.84rem;font-style:italic;">No questions yet.</p>';
+      });
+      renderNotesPanel(data);
+    }
+
+    function deleteComment(id) {
+      const data = loadComments();
+      data.comments = data.comments.filter((comment) => comment.id !== id);
+      saveComments(data);
+      renderComments();
+      showToast('Deleted');
+    }
+
+    function toggleNotes() {
+      document.getElementById('notes-panel').classList.toggle('open');
+    }
+
+    function renderNotesPanel(data) {
+      const list = document.getElementById('notes-list');
+      if (!data.comments.length) {
+        list.innerHTML = '<p style="color:var(--muted);font-style:italic;">No notes yet. Select text in the article and click “Ask about this”.</p>';
+        return;
+      }
+      const grouped = data.comments.reduce((acc, comment) => {
+        const title = comment.sectionTitle || 'General';
+        if (!acc[title]) acc[title] = [];
+        acc[title].push(comment);
+        return acc;
+      }, {});
+      list.innerHTML = Object.entries(grouped).map(([title, comments]) => `
+        <div>
+          <div class="notes-section-title">${escapeHTML(title)}</div>
+          ${comments.map(commentHTML).join('')}
+        </div>`).join('');
+    }
+
+    function exportAllNotes() {
+      const data = loadComments();
+      if (!data.comments.length) {
+        showToast('No notes to export');
+        return;
+      }
+      const grouped = data.comments.reduce((acc, comment) => {
+        const title = comment.sectionTitle || 'General';
+        if (!acc[title]) acc[title] = [];
+        acc[title].push(comment);
+        return acc;
+      }, {});
+      let markdown = `# ${PAGE_TITLE} — My Notes\n\n`;
+      Object.entries(grouped).forEach(([title, comments]) => {
+        markdown += `## ${title}\n\n`;
+        comments.forEach((comment) => {
+          if (comment.quote) markdown += `> ${comment.quote}\n\n`;
+          markdown += `**Q:** ${comment.question}\n\n_${new Date(comment.timestamp).toLocaleString()}_\n\n`;
+        });
+      });
+      writeClipboard(markdown).then(() => showToast('Exported ✓')).catch(() => showToast('Clipboard blocked'));
+    }
+
+    function clearAllNotes() {
+      if (!confirm('Delete all saved notes for this page?')) return;
+      saveComments({ version: 1, comments: [] });
+      renderComments();
+      showToast('Cleared');
+    }
+
+    function timeAgo(timestamp) {
+      const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr ago`;
+      return `${Math.floor(seconds / 86400)} days ago`;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      window.clearTimeout(showToast.timeout);
+      showToast.timeout = window.setTimeout(() => toast.classList.remove('show'), 1900);
+    }
+
+    document.querySelectorAll('details').forEach((details) => {
+      details.addEventListener('toggle', () => {
+        if (details.open && window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([details]).catch(() => {});
+        }
+      });
+    });
+
+    renderComments();
+  </script>
+</body>
+</html>
