@@ -54,7 +54,7 @@ params.py → hamiltonian.py → protocol.py → fidelity.py
 - **Reproduction steps**: N/A — greenfield.
 - **Expected behavior**: Ideal gate yields F = 1 (infidelity < 10⁻¹⁰). Tests pass. Figure generated.
 - **Acceptance criteria** (from issue):
-  1. `params.py` returns τ ≈ 230 μs and C₆ ≈ 860 GHz·μm⁶ for |70,0,0.5⟩
+  1. `params.py` returns τ ≈ 374 μs (at T=0K) and C₆ ≈ 863 GHz·μm⁶ for |70,0,0.5⟩
   2. `hamiltonian.py` matrix elements match hand calculation
   3. `protocol.py` ideal run yields 1 − F < 10⁻¹⁰
   4. `fidelity.py` passes known-input tests
@@ -67,15 +67,17 @@ params.py → hamiltonian.py → protocol.py → fidelity.py
 **ARC parameter verification** (run during triage on this machine):
 
 ```
-Rb87 |70, 0, 0.5⟩ at 300K:
-  Radiative lifetime (0K):  373.9 μs
-  Total lifetime (300K):    146.5 μs   ← NOT ~230 μs as in AGENTS.md
-  Decay rate (300K):        6827 Hz
-  C₆:                      −862.7 GHz·μm⁶  ✓ (matches AGENTS.md ~860)
-  5P₃/₂ linewidth:         2π × 6.07 MHz
+Rb87 |70, 0, 0.5⟩:
+  Radiative lifetime (T=0K):  373.9 μs   ← use this (no BBR)
+  Total lifetime (T=300K):    146.5 μs   (with BBR at room temp)
+  Decay rate (0K):            2674 Hz
+  C₆:                        −862.7 GHz·μm⁶  ✓ (matches AGENTS.md ~860)
+  5P₃/₂ linewidth:           2π × 6.07 MHz
 ```
 
-**⚠ AGENTS.md says τ ≈ 230 μs. ARC returns 146.5 μs at 300K.** The 230 μs figure likely refers to the 0K radiative-only lifetime (ARC gives 374 μs at 0K — also not 230 μs) or a different source. The implementer must trust ARC and note the discrepancy. This affects all downstream error estimates but does not block the ideal gate (which has no decay).
+**Use T=0K (radiative-only lifetime) for `params.py`.** The simulation models Rydberg decay as a separate error channel — BBR-induced transitions are not part of the Lindblad collapse operator √γ|g⟩⟨r|, so the radiative lifetime is the correct input.
+
+**AGENTS.md says τ ≈ 230 μs.** This value does not match n=70 at any temperature. It exactly matches **n=60 at T=0K** (ARC returns 230.0 μs) — likely a copy error from a different parameter set. The correct value for n=70 at T=0K is **τ ≈ 374 μs**. C₆ ≈ 863 GHz·μm⁶ is confirmed for n=70. This does not block the ideal gate (which has no decay).
 
 **Blockade strength at baseline parameters**:
 
@@ -169,7 +171,7 @@ N/A — this is a greenfield implementation issue, not a bug. The "root cause" i
 1. **Environment setup**: Create `requirements.txt` (or document conda env). Verify `import qutip` and `import arc` work.
 
 2. **`src/params.py`** (S-01):
-   - Query `arc.Rubidium87().getStateLifetime(70, 0, 0.5, temperature=300, includeLevelsUpTo=100)`.
+   - Query `arc.Rubidium87().getStateLifetime(70, 0, 0.5, temperature=0, includeLevelsUpTo=100)` (T=0K: radiative-only, no BBR).
    - Query `PairStateInteractions` for C₆ with `(n=70, l=0, j=0.5)` symmetric pair, `m1=m2=0.5`.
    - Return a frozen dataclass: `RydbergParams(tau, gamma, c6, omega, R, U, U_over_Omega, ...)`.
    - Print/log the ARC values on construction so discrepancies are visible.
@@ -287,7 +289,7 @@ figures/population_dynamics.png exists and shows 4 curves
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| ARC version mismatch between system (3.10.2) and conda env (3.9.0) gives different τ, C₆ | Low | Medium | Pin ARC version in requirements; document which values to expect |
+| ARC version mismatch between system (3.10.2) and conda env (3.9.0) gives different τ, C₆ | Low | Medium | Pin ARC version in requirements; document which values to expect. Use T=0K. |
 | QuTiP 5 `sesolve` option syntax confuses implementer | Medium | Low | Use `options={"nsteps": 5000}` dict, not `Options()` class |
 | 3-level model for ideal gate confuses later blockade work | Low | Low | Document clearly in `hamiltonian.py` that 3-level = ideal, 4-level = finite blockade |
 | Population dynamics figure for |11⟩ needs all 3 steps stitched together | Medium | Low | Concatenate time arrays and population arrays from the 3 sesolve calls |
@@ -304,13 +306,11 @@ This is the first code in the repo. Rollback = `git revert` the implementation c
 
 ## 8. Open questions
 
-### Q1: AGENTS.md lifetime discrepancy
+### Q1: AGENTS.md lifetime discrepancy (RESOLVED)
 
-- **Question**: AGENTS.md says τ ≈ 230 μs. ARC (v3.9.0 and v3.10.2) returns 146.5 μs at 300K for Rb87 |70S₁/₂⟩. Which is correct?
-- **What was found**: ARC gives 373.9 μs at 0K (radiative only) and 146.5 μs at 300K (with BBR). Neither matches 230 μs.
-- **Why it is ambiguous**: The 230 μs figure may come from a different reference, a different temperature, or may be an error in the AGENTS.md.
-- **Options**: (A) Trust ARC, document discrepancy. (B) Investigate whether 230 μs comes from a specific paper.
-- **Recommended default**: (A) — ARC is the authoritative source per AGENTS.md standing order #5. Note the discrepancy in `params.py` docstring.
+- **Question**: AGENTS.md says τ ≈ 230 μs. ARC returns 373.9 μs at T=0K and 146.5 μs at T=300K for Rb87 |70S₁/₂⟩. Neither matches.
+- **What was found**: The 230 μs value exactly matches **n=60 at T=0K** (ARC: 230.0 μs). This is a copy error in AGENTS.md — the value was likely carried over from a different parameter set.
+- **Resolution**: Use T=0K (radiative-only lifetime). The correct value for n=70 at T=0K is **τ ≈ 374 μs**. Document in `params.py`. Use `temperature=0` in the ARC call.
 
 ### Q2: Default interatomic distance
 
