@@ -87,7 +87,12 @@ R = 4 μm:  U = 211 MHz,   U/Ω = 53
 R = 3 μm:  U = 1183 MHz,  U/Ω = 296
 ```
 
-The AGENTS.md says R ≈ 6 μm and "U >> Ω", but at R = 6 μm, U/Ω ≈ 4.6 — this is the finite-blockade regime, not the blockade limit. For the ideal simulation (U → ∞) this doesn't matter, but `params.py` should compute and report U/Ω so downstream issues (#4 blockade error) use a physically sensible R. A default of R ≈ 3–4 μm better matches "U >> Ω".
+The AGENTS.md says R ≈ 6 μm and “U >> Ω”, but at R = 6 μm, U/Ω ≈ 4.6 — not strong blockade. **Use R = 3 μm as the default** (U/Ω ≈ 296, firmly in the blockade regime). At this distance:
+- U = 1183 MHz ≈ 1.18 GHz
+- ε_block = Ω²/(8U²) ≈ 1.4 × 10⁻⁶ (negligible)
+- ε_decay = 7π/(4Ωτ) ≈ 5.9 × 10⁻⁴ (dominant error at this operating point)
+
+For the ideal simulation (U → ∞ via 3-level truncation) R is not used, but `params.py` should store R = 3 μm as the baseline for downstream error sweeps.
 
 **QuTiP environment verified**:
 
@@ -133,7 +138,7 @@ N/A — this is a greenfield implementation issue, not a bug. The "root cause" i
 |---|---|---|---|---|
 | 4-level ideal model fails the 10⁻¹⁰ threshold | Verified: U/Ω=10000 gives 3.7×10⁻⁹ (fails). U/Ω=1e6 causes ODE crash. | 3-level model gives exactly 0. | Use 3-level model for ideal gate; 4-level for blockade error (issue #4). | high |
 | AGENTS.md lifetime (230 μs) is wrong | ARC returns 146.5 μs at 300K. | Could be a different temperature or source. | Trust ARC. Document discrepancy. | medium |
-| AGENTS.md interatomic distance (6 μm) gives weak blockade | U/Ω = 4.6 at R=6μm. | Issue #1 doesn't need a physical R (ideal = U=∞). | Note in params.py that R should be chosen to give U/Ω >> 1 for physical simulations. | low (for this issue) |
+| AGENTS.md interatomic distance (6 μm) gives weak blockade | U/Ω = 4.6 at R=6μm. R=3μm gives U/Ω=296. | Default to R=3 μm in `params.py`. Ideal gate uses 3-level model (U=∞) regardless. | low (for this issue) |
 | QuTiP 5 API differences from v4 | Options class deprecated. Dict required. | sesolve/mesolve core API unchanged. | Use `options={"nsteps": N}` dict syntax. | low |
 
 ## 5. Decision
@@ -312,13 +317,10 @@ This is the first code in the repo. Rollback = `git revert` the implementation c
 - **What was found**: The 230 μs value exactly matches **n=60 at T=0K** (ARC: 230.0 μs). This is a copy error in AGENTS.md — the value was likely carried over from a different parameter set.
 - **Resolution**: Use T=0K (radiative-only lifetime). The correct value for n=70 at T=0K is **τ ≈ 374 μs**. Document in `params.py`. Use `temperature=0` in the ARC call.
 
-### Q2: Default interatomic distance
+### Q2: Default interatomic distance (RESOLVED)
 
-- **Question**: AGENTS.md says R ≈ 6 μm, but U/Ω = 4.6 at that distance — not "U >> Ω".
-- **What was found**: R = 3 μm gives U/Ω ≈ 296 (strong blockade). R = 4 μm gives U/Ω ≈ 53 (reasonable).
-- **Why it is ambiguous**: The ideal gate (this issue) doesn't use R at all (U = ∞). But `params.py` should pick a sensible default for downstream issues.
-- **Options**: (A) Default R = 4 μm (U/Ω ≈ 53). (B) Default R = 3 μm (U/Ω ≈ 296). (C) Default R = 6 μm per AGENTS.md, note that it's weak blockade.
-- **Recommended default**: (A) — R = 4 μm is a compromise. Strong enough blockade for the π–2π–π protocol to work, physically realistic tweezer spacing.
+- **Question**: AGENTS.md says R ≈ 6 μm, but U/Ω = 4.6 at that distance — not “U >> Ω”.
+- **Resolution**: Use **R = 3 μm** as the default. This gives U/Ω ≈ 296 (strong blockade), consistent with the AGENTS.md intent of “U >> Ω”. Error budget at this point: ε_block ≈ 1.4×10⁻⁶, ε_decay ≈ 5.9×10⁻⁴. The ideal gate (this issue) uses the 3-level model (U = ∞) regardless.
 
 ### Q3: Environment management
 
