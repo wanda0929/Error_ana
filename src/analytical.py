@@ -25,8 +25,8 @@ def rydberg_decay_exposure_time(omega: float) -> float:
     """Return the effective Rydberg occupation time ``7*pi/(4*omega)``.
 
     ``omega`` is an angular Rabi frequency.  The returned time uses the inverse
-    unit of ``omega``; for the project default, ``omega`` is rad/us and the time
-    is in microseconds.
+    unit of ``omega``; for the project default, ``omega`` is in rad/us and the
+    time is in microseconds.
     """
 
     omega = _check_positive_finite("omega", omega)
@@ -54,3 +54,16 @@ def epsilon_decay(omega: float, tau: float) -> float:
 
     tau = _check_positive_finite("tau", tau)
     return epsilon_decay_from_gamma(omega, 1.0 / tau)
+
+
+def epsilon_blockade(omega: float, blockade_shift: float) -> float:
+    """Return the perturbative finite-blockade infidelity ``Ω²/(8U²)``.
+
+    Parameters use the same angular-frequency units.  The formula only depends
+    on the ratio, so ``omega`` and ``blockade_shift`` may be rad/us, rad/s, or
+    any consistent unit.
+    """
+
+    omega = _check_positive_finite("omega", omega)
+    blockade_shift = _check_positive_finite("blockade_shift", blockade_shift)
+    return omega**2 / (8.0 * blockade_shift**2)
