@@ -6,6 +6,10 @@ import math
 
 import numpy as np
 
+from .params import BOLTZMANN_J_PER_K
+
+DOPPLER_PROTOCOL_COEFFICIENT = math.pi**2 / 4.0
+
 
 def _check_positive_finite(name: str, value: float) -> float:
     value = float(value)
@@ -54,3 +58,25 @@ def epsilon_decay(omega: float, tau: float) -> float:
 
     tau = _check_positive_finite("tau", tau)
     return epsilon_decay_from_gamma(omega, 1.0 / tau)
+
+
+def epsilon_doppler(
+    k_eff_angular: float,
+    temperature: float,
+    mass: float,
+    omega: float,
+) -> float:
+    """Perturbative Doppler infidelity for the pi-2pi-pi CZ gate.
+
+    ``k_eff_angular`` is the two-photon wavevector in rad/um, ``temperature`` is
+    in kelvin, ``mass`` is in kg, and ``omega`` is in rad/us.  Since 1 m/s is
+    exactly 1 um/us, ``k_B T / m`` may be used directly as the velocity variance
+    in solver units.
+    """
+
+    k_eff_angular = _check_nonnegative_finite("k_eff_angular", k_eff_angular)
+    temperature = _check_nonnegative_finite("temperature", temperature)
+    mass = _check_positive_finite("mass", mass)
+    omega = _check_positive_finite("omega", omega)
+    velocity_variance = BOLTZMANN_J_PER_K * temperature / mass
+    return DOPPLER_PROTOCOL_COEFFICIENT * k_eff_angular**2 * velocity_variance / omega**2
