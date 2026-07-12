@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rydberg CZ Gate Error Analysis — Introduction and Ideal Gate</title>
+  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Rydberg Decay, and Finite Blockade</title>
   <script>
     window.MathJax = {
       tex: {
@@ -679,6 +679,7 @@
       <div class="topbar-actions">
         <a class="button" href="#sec-introduction">Introduction</a>
         <a class="button" href="#sec-ideal-gate">Ideal gate</a>
+        <a class="button" href="#sec-error-decay">Decay</a>
         <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
         <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
       </div>
@@ -978,9 +979,65 @@
       <div id="comments-sec-ideal-gate" class="comments no-print"></div>
     </section>
 
-    <section id="sec-error-blockade" data-section="Error: Finite blockade" class="error-section">
+    <section id="sec-error-decay" data-section="Error: Rydberg Decay" class="error-section">
       <div class="section-heading">
         <span class="section-number">03</span>
+        <h2>Rydberg Decay</h2>
+      </div>
+
+      <div class="callout">A Rydberg atom is not immortal: spontaneous decay during the pulse sequence leaks which-path information and reduces the CZ fidelity in proportion to the time spent in $|r\rangle$.</div>
+
+      <p class="lead">The state $|r\rangle = |70S_{1/2}\rangle$ is a highly excited rubidium level. It eventually emits a photon and falls back toward lower states. In this first error slice we use the narrow model requested for the gate budget: each atom has a Lindblad decay channel $L=\sqrt{\Gamma}\,|g\rangle\langle r|$, so a decay event returns the atom to the laser-coupled ground state and destroys the coherent phase history.</p>
+
+      <p>The important number is not the full gate duration $4\pi/\Omega$, but the integrated Rydberg population during the three pulses. For the ideal blockade sequence, that effective exposure time is</p>
+
+      <div class="math-box">
+        $$T_R = \int_0^{t_g} P_r(t)\,dt = \frac{7\pi}{4\Omega}, \qquad \epsilon_{\mathrm{decay}} = \Gamma T_R = \frac{1}{\tau}\frac{7\pi}{4\Omega}.$$
+      </div>
+
+      <p>Here $\Gamma=1/\tau$ is the Rydberg decay rate and $\Omega$ is the angular Rabi frequency. The project baseline uses the ARC radiative lifetime for the $|70S_{1/2}\rangle$ state, about $374\,\mu\mathrm{s}$, with $\Omega/2\pi=4\,\mathrm{MHz}$. That gives a leading decay error of roughly $5.9\times10^{-4}$ before any other error source is turned on.</p>
+
+      <details>
+        <summary>Derivation sketch</summary>
+        <div class="details-body">
+          <p>For weak decay, treat spontaneous emission as a rare quantum jump. The probability of a jump is the decay rate times the time-integrated Rydberg population: $p_{\mathrm{jump}}\simeq\Gamma\int P_r(t)dt$. Averaging over the four computational branches of the $\pi$–$2\pi$–$\pi$ protocol gives the standard blockade-gate exposure $T_R=7\pi/(4\Omega)$, so the leading infidelity is linear in $\Gamma$ and inversely proportional to the Rabi frequency.</p>
+          <p>The numerical simulation does not assume the formula. It evolves the density matrix with the same three pulses and the two collapse operators, reconstructs the projected two-qubit channel, and evaluates the Pedersen average gate fidelity after the known local-$Z$ phase correction.</p>
+        </div>
+      </details>
+
+      <figure class="figure-card" aria-labelledby="decay-figure-title">
+        <h3 id="decay-figure-title">Fidelity versus Rydberg decay rate</h3>
+        <img src="../figures/fidelity_vs_decay_rate.png" alt="Average CZ gate fidelity versus Rydberg decay rate, comparing Lindblad simulation with the analytical decay formula." onerror="showDecayFallback(this)">
+        <div id="decay-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/fidelity_vs_decay_rate.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the numerical decay sweep and figure.</p>
+        </div>
+        <figcaption>Numerical dots come from the Lindblad master equation with decay only. The analytical curve is $F_{\mathrm{avg}}\approx1-\Gamma 7\pi/(4\Omega)$, and the dashed reference line marks the project ARC baseline lifetime.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag rydberg">Scaling</span>
+          <h3>$\epsilon\propto 1/(\Omega\tau)$</h3>
+          <p>Faster gates and longer-lived Rydberg states reduce this error directly.</p>
+        </div>
+        <div class="card">
+          <span class="tag accent">Baseline</span>
+          <h3>$\epsilon_{\mathrm{decay}}\approx5.9\times10^{-4}$</h3>
+          <p>For the current ARC radiative-lifetime convention, decay is small but not imaginary.</p>
+        </div>
+        <div class="card highlight">
+          <span class="tag blockade">Takeaway</span>
+          <p><strong>This error dominates when</strong> the gate is slow or the chosen Rydberg state has a short lifetime; it is the tax paid for spending real time in $|r\rangle$.</p>
+        </div>
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-error-decay', 'Rydberg Decay')">💬 Ask about this section</button>
+      <div id="comments-sec-error-decay" class="comments no-print"></div>
+    </section>
+
+    <section id="sec-error-blockade" data-section="Error: Finite blockade" class="error-section">
+      <div class="section-heading">
+        <span class="section-number">04</span>
         <h2>Finite blockade</h2>
       </div>
 
@@ -1006,9 +1063,12 @@
         </div>
       </details>
 
-      <figure class="figure-card">
-        <h3>Fidelity versus blockade strength</h3>
-        <img src="../figures/fidelity_vs_blockade.png" alt="Finite blockade CZ infidelity versus blockade ratio U over Omega, with numerical points, analytical curve, and baseline operating point.">
+      <figure class="figure-card" aria-labelledby="blockade-figure-title">
+        <h3 id="blockade-figure-title">Fidelity versus blockade strength</h3>
+        <img src="../figures/fidelity_vs_blockade.png" alt="Finite blockade CZ infidelity versus blockade ratio U over Omega, with numerical points, analytical curve, and baseline operating point." onerror="showBlockadeFallback(this)">
+        <div id="blockade-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/fidelity_vs_blockade.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the numerical blockade sweep and figure.</p>
+        </div>
         <figcaption>Numerical QuTiP points use the finite-blockade Hamiltonian with $|rr\rangle$ included. The analytical curve is $1-F_{\mathrm{avg}}=\Omega^2/(8U^2)$, and the dashed reference marks the baseline operating point near $U/\Omega\approx296$.</figcaption>
       </figure>
 
@@ -1077,7 +1137,7 @@
     -->
 
     <footer class="footer">
-      <p>This explainer currently covers the introduction, the ideal-gate baseline, and the finite-blockade error slice. Remaining error channels, the combined budget, and the summary table are left to later issue slices.</p>
+      <p>This page now covers the introduction, ideal-gate baseline, Rydberg decay, and finite blockade. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
       <div class="topbar-actions no-print">
         <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
         <button class="button" type="button" onclick="window.print()">Save as PDF</button>
@@ -1086,13 +1146,25 @@
   </div>
 
   <script>
-    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction and Ideal Gate';
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Rydberg Decay, and Finite Blockade';
     const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
     let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
 
     function showPopulationFallback(img) {
       img.hidden = true;
       const fallback = document.getElementById('population-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showDecayFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('decay-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showBlockadeFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('blockade-fallback');
       if (fallback) fallback.hidden = false;
     }
 

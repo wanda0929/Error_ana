@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate publication figures for implemented error channels."""
+"""Generate publication figures for implemented Rydberg CZ error channels."""
 
 from __future__ import annotations
 
@@ -18,16 +18,114 @@ import numpy as np
 
 from src.analytical import epsilon_blockade
 from src.params import get_rydberg_params
-from src.sweeps import blockade_ratios, sweep_blockade
+from src.sweeps import (
+    blockade_ratios,
+    read_blockade_sweep_csv,
+    read_decay_sweep_csv,
+    sweep_blockade,
+    sweep_decay,
+    write_blockade_sweep_csv,
+    write_decay_sweep_csv,
+)
 
 
-def plot_blockade_sweep(output_path: Path, *, n_steps_per_pi: int = 160) -> None:
+DECAY_SWEEP_CSV = ROOT / "figures" / "decay_sweep.csv"
+DECAY_FIGURE = ROOT / "figures" / "fidelity_vs_decay_rate.png"
+BLOCKADE_SWEEP_CSV = ROOT / "figures" / "blockade_sweep.csv"
+BLOCKADE_FIGURE = ROOT / "figures" / "fidelity_vs_blockade.png"
+
+
+def _load_or_create_decay_rows():
+    if DECAY_SWEEP_CSV.exists():
+        return read_decay_sweep_csv(DECAY_SWEEP_CSV)
+    rows = sweep_decay(num_points=25, decades=2.0)
+    write_decay_sweep_csv(rows, DECAY_SWEEP_CSV)
+    return rows
+
+
+def _load_or_create_blockade_rows():
+    if BLOCKADE_SWEEP_CSV.exists():
+        return read_blockade_sweep_csv(BLOCKADE_SWEEP_CSV)
+    rows = sweep_blockade(n_steps_per_pi=160)
+    write_blockade_sweep_csv(rows, BLOCKADE_SWEEP_CSV)
+    return rows
+
+
+def plot_decay_sweep(output_path: Path = DECAY_FIGURE) -> Path:
+    """Plot numerical and analytical fidelity versus decay rate."""
+
     params = get_rydberg_params()
-    ratios = blockade_ratios(num=32, minimum=5.0, maximum=500.0)
-    rows = sweep_blockade(params.omega_rad_per_us, ratios=ratios, n_steps_per_pi=n_steps_per_pi)
+    rows = _load_or_create_decay_rows()
+    gamma = np.array([row.gamma_per_us for row in rows], dtype=float)
+    numerical_fidelity = np.array([row.numerical_fidelity for row in rows], dtype=float)
+    analytical_fidelity = np.array([row.analytical_fidelity for row in rows], dtype=float)
 
-    x = np.array([row["blockade_to_rabi"] for row in rows], dtype=float)
-    numerical = np.array([row["numerical_error"] for row in rows], dtype=float)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(7.0, 4.2), constrained_layout=True)
+
+    ax.plot(gamma, analytical_fidelity, color="#5e81ac", lw=2.2, label=r"Analytical $1-\Gamma T_R$")
+    ax.scatter(
+        gamma,
+        numerical_fidelity,
+        s=42,
+        color="#bf616a",
+        edgecolor="white",
+        linewidth=0.7,
+        zorder=3,
+        label="Lindblad simulation",
+    )
+    ax.axvline(
+        params.rydberg_decay_rate_per_us,
+        color="#2e3440",
+        lw=1.2,
+        ls="--",
+        alpha=0.72,
+        label="Project ARC baseline",
+    )
+
+    baseline_text = (
+        rf"$\tau={params.rydberg_lifetime_us:.0f}\,\mu s$" "\n"
+        rf"$\Omega/2\pi={params.omega_mhz:.1f}\,MHz$"
+    )
+    ax.text(
+        params.rydberg_decay_rate_per_us * 1.08,
+        min(0.9996, max(analytical_fidelity) - 0.00025),
+        baseline_text,
+        ha="left",
+        va="top",
+        fontsize=9,
+        color="#2e3440",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "white", "edgecolor": "#d8dee9", "alpha": 0.92},
+    )
+
+    ax.set_xscale("log")
+    ax.set_title("Rydberg decay error in the blockade CZ gate")
+    ax.set_xlabel(r"Rydberg decay rate $\Gamma$ ($\mu s^{-1}$)")
+    ax.set_ylabel(r"Average gate fidelity $F_{avg}$")
+    ax.set_ylim(min(analytical_fidelity.min(), numerical_fidelity.min()) - 0.0007, 1.00015)
+    ax.grid(True, which="major", alpha=0.25)
+    ax.grid(True, which="minor", alpha=0.10)
+    ax.legend(frameon=False, loc="lower left")
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+    return output_path
+
+
+def plot_blockade_sweep(output_path: Path = BLOCKADE_FIGURE, *, n_steps_per_pi: int = 160) -> Path:
+    """Plot numerical and analytical infidelity versus blockade ratio."""
+
+    params = get_rydberg_params()
+    rows = _load_or_create_blockade_rows()
+    x = np.array([row.blockade_to_rabi for row in rows], dtype=float)
+    numerical = np.array([row.numerical_error for row in rows], dtype=float)
+
+    if x.size < 2:
+        ratios = blockade_ratios(num=32, minimum=5.0, maximum=500.0)
+        rows = sweep_blockade(params.omega_rad_per_us, ratios=ratios, n_steps_per_pi=n_steps_per_pi)
+        write_blockade_sweep_csv(rows, BLOCKADE_SWEEP_CSV)
+        x = np.array([row.blockade_to_rabi for row in rows], dtype=float)
+        numerical = np.array([row.numerical_error for row in rows], dtype=float)
+
     x_curve = np.geomspace(x.min(), x.max(), 400)
     analytical = np.array(
         [epsilon_blockade(params.omega_rad_per_us, params.omega_rad_per_us * ratio) for ratio in x_curve],
@@ -76,12 +174,13 @@ def plot_blockade_sweep(output_path: Path, *, n_steps_per_pi: int = 160) -> None
     )
     fig.savefig(output_path, dpi=220)
     plt.close(fig)
+    return output_path
 
 
 def main() -> None:
-    output_path = ROOT / "figures" / "fidelity_vs_blockade.png"
-    plot_blockade_sweep(output_path)
-    print(f"Saved {output_path.relative_to(ROOT)}")
+    outputs = [plot_decay_sweep(), plot_blockade_sweep()]
+    for output_path in outputs:
+        print(f"Saved {output_path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

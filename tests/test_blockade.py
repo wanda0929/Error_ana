@@ -56,9 +56,9 @@ def test_blockade_sweep_shape_and_scaling():
     ratios = blockade_ratios(num=24, minimum=5.0, maximum=500.0)
     rows = sweep_blockade(omega, ratios=ratios, n_steps_per_pi=40)
     assert len(rows) == 24
-    assert np.isclose(rows[0]["blockade_to_rabi"], 5.0)
-    assert np.isclose(rows[-1]["blockade_to_rabi"], 500.0)
-    assert rows[0]["numerical_error"] > rows[-1]["numerical_error"]
+    assert np.isclose(rows[0].blockade_to_rabi, 5.0)
+    assert np.isclose(rows[-1].blockade_to_rabi, 500.0)
+    assert rows[0].numerical_error > rows[-1].numerical_error
     for row in rows[8:]:
-        rel = abs(row["numerical_error"] - row["analytical_error"]) / row["analytical_error"]
+        rel = abs(row.numerical_error - row.analytical_error) / row.analytical_error
         assert rel < 0.1

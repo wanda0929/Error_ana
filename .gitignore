@@ -6,5 +6,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
-# Generated figures
+# Generated figures and sweep data
 figures/*.png
+figures/*.csv

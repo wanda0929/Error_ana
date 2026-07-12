@@ -2,24 +2,134 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+import csv
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Iterable
 
 import numpy as np
 
-from .analytical import epsilon_blockade
+from .analytical import epsilon_blockade, epsilon_decay_from_gamma
 from .errors.blockade import run_blockade_gate
+from .errors.decay import run_decay_gate
 from .fidelity import CZ_TARGET, pedersen_fidelity
 from .params import get_rydberg_params
+
+
+@dataclass(frozen=True)
+class DecaySweepRow:
+    """One row of the isolated Rydberg-decay sweep."""
+
+    gamma_per_us: float
+    lifetime_us: float
+    numerical_fidelity: float
+    numerical_error: float
+    analytical_error: float
+    analytical_fidelity: float
+
+
+@dataclass(frozen=True)
+class BlockadeSweepRow:
+    """One row of the isolated finite-blockade sweep."""
+
+    blockade_to_rabi: float
+    blockade_shift: float
+    numerical_fidelity: float
+    numerical_error: float
+    analytical_error: float
+    analytical_fidelity: float
+    rr_leakage: float
+    total_leakage: float
+    max_rr_population: float
+
+
+def _check_positive_finite(name: str, value: float) -> float:
+    value = float(value)
+    if not np.isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be positive and finite, got {value!r}")
+    return value
+
+
+def _check_num_points(num_points: int) -> int:
+    if not isinstance(num_points, int) or num_points < 2:
+        raise ValueError("num_points must be an integer >= 2")
+    return num_points
+
+
+def decay_gamma_grid(
+    baseline_gamma: float,
+    *,
+    num_points: int = 25,
+    decades: float = 2.0,
+) -> np.ndarray:
+    """Return a logarithmic gamma grid centered on ``baseline_gamma``.
+
+    ``decades`` is the total span in orders of magnitude.  The default covers
+    baseline/10 through baseline*10, exactly two decades.
+    """
+
+    baseline_gamma = _check_positive_finite("baseline_gamma", baseline_gamma)
+    num_points = _check_num_points(num_points)
+    decades = _check_positive_finite("decades", decades)
+    half_span = decades / 2.0
+    return np.logspace(
+        np.log10(baseline_gamma) - half_span,
+        np.log10(baseline_gamma) + half_span,
+        num_points,
+    )
 
 
 def blockade_ratios(num: int = 30, minimum: float = 5.0, maximum: float = 500.0) -> np.ndarray:
     """Return log-spaced blockade ratios ``U/Ω`` for the standard sweep."""
 
-    if not isinstance(num, int) or num < 2:
-        raise ValueError("num must be an integer >= 2")
-    if not np.isfinite(minimum) or not np.isfinite(maximum) or minimum <= 0 or maximum <= minimum:
-        raise ValueError("minimum and maximum must be positive finite values with maximum > minimum")
-    return np.geomspace(float(minimum), float(maximum), int(num))
+    num = _check_num_points(num)
+    minimum = _check_positive_finite("minimum", minimum)
+    maximum = _check_positive_finite("maximum", maximum)
+    if maximum <= minimum:
+        raise ValueError("maximum must be greater than minimum")
+    return np.geomspace(minimum, maximum, num)
+
+
+def sweep_decay(
+    *,
+    omega: float | None = None,
+    gammas: Iterable[float] | None = None,
+    baseline_gamma: float | None = None,
+    num_points: int = 25,
+    decades: float = 2.0,
+) -> list[DecaySweepRow]:
+    """Sweep Rydberg decay rate and compare simulation with the formula."""
+
+    params = get_rydberg_params()
+    if omega is None:
+        omega = params.omega_rad_per_us
+    omega = _check_positive_finite("omega", omega)
+
+    if gammas is None:
+        if baseline_gamma is None:
+            baseline_gamma = params.rydberg_decay_rate_per_us
+        gamma_values = decay_gamma_grid(baseline_gamma, num_points=num_points, decades=decades)
+    else:
+        gamma_values = np.array(list(gammas), dtype=float)
+        if gamma_values.size < 2:
+            raise ValueError("gammas must contain at least two points")
+
+    rows: list[DecaySweepRow] = []
+    for gamma in gamma_values:
+        gamma = _check_positive_finite("gamma", float(gamma))
+        result = run_decay_gate(omega=omega, gamma=gamma)
+        analytical_error = epsilon_decay_from_gamma(omega, gamma)
+        rows.append(
+            DecaySweepRow(
+                gamma_per_us=gamma,
+                lifetime_us=1.0 / gamma,
+                numerical_fidelity=result.average_gate_fidelity,
+                numerical_error=1.0 - result.average_gate_fidelity,
+                analytical_error=analytical_error,
+                analytical_fidelity=1.0 - analytical_error,
+            )
+        )
+    return rows
 
 
 def sweep_blockade(
@@ -28,8 +138,8 @@ def sweep_blockade(
     *,
     ratios: Iterable[float] | None = None,
     n_steps_per_pi: int = 160,
-) -> list[dict[str, float]]:
-    """Sweep finite-blockade strength and return numerical/analytical errors.
+) -> list[BlockadeSweepRow]:
+    """Sweep finite-blockade strength and compare simulation with the formula.
 
     Provide either absolute ``blockade_shifts`` or dimensionless ``ratios``.  If
     neither is provided, the standard 30-point ``U/Ω`` sweep from 5 to 500 is
@@ -38,8 +148,7 @@ def sweep_blockade(
 
     if omega is None:
         omega = get_rydberg_params().omega_rad_per_us
-    if not np.isfinite(omega) or omega <= 0:
-        raise ValueError(f"omega must be positive and finite, got {omega!r}")
+    omega = _check_positive_finite("omega", omega)
 
     if blockade_shifts is not None and ratios is not None:
         raise ValueError("provide either blockade_shifts or ratios, not both")
@@ -54,28 +163,81 @@ def sweep_blockade(
         ratio_values = np.asarray(list(ratios), dtype=float)
         shift_values = omega * ratio_values
 
-    if shift_values.ndim != 1 or len(shift_values) == 0:
+    if shift_values.ndim != 1 or shift_values.size == 0:
         raise ValueError("sweep requires at least one blockade value")
     if np.any(~np.isfinite(shift_values)) or np.any(shift_values <= 0):
         raise ValueError("all blockade shifts must be positive and finite")
     if np.any(~np.isfinite(ratio_values)) or np.any(ratio_values <= 0):
         raise ValueError("all blockade ratios must be positive and finite")
 
-    rows: list[dict[str, float]] = []
+    rows: list[BlockadeSweepRow] = []
     for ratio, blockade_shift in zip(ratio_values, shift_values):
-        result = run_blockade_gate(omega, blockade_shift, n_steps_per_pi=n_steps_per_pi)
+        result = run_blockade_gate(omega, float(blockade_shift), n_steps_per_pi=n_steps_per_pi)
         fidelity = pedersen_fidelity(result["unitary"], CZ_TARGET, correct_local_z=True)
-        analytical_error = epsilon_blockade(omega, blockade_shift)
+        analytical_error = epsilon_blockade(omega, float(blockade_shift))
         rows.append(
-            {
-                "blockade_to_rabi": float(ratio),
-                "blockade_shift": float(blockade_shift),
-                "fidelity": float(fidelity),
-                "numerical_error": float(1.0 - fidelity),
-                "analytical_error": float(analytical_error),
-                "analytical_fidelity": float(1.0 - analytical_error),
-                "rr_leakage": float(result["rr_leakage"]),
-                "total_leakage": float(result["total_leakage"]),
-            }
+            BlockadeSweepRow(
+                blockade_to_rabi=float(ratio),
+                blockade_shift=float(blockade_shift),
+                numerical_fidelity=float(fidelity),
+                numerical_error=float(1.0 - fidelity),
+                analytical_error=float(analytical_error),
+                analytical_fidelity=float(1.0 - analytical_error),
+                rr_leakage=float(result["rr_leakage"]),
+                total_leakage=float(result["total_leakage"]),
+                max_rr_population=float(result["max_rr_population"]),
+            )
         )
+    return rows
+
+
+def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_message: str) -> Path:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    rows = list(rows)
+    if not rows:
+        raise ValueError(empty_message)
+
+    fieldnames = list(asdict(rows[0]).keys())
+    with output_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(asdict(row))
+    return output_path
+
+
+def write_decay_sweep_csv(rows: Iterable[DecaySweepRow], path: str | Path) -> Path:
+    """Write decay sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty decay sweep")
+
+
+def write_blockade_sweep_csv(rows: Iterable[BlockadeSweepRow], path: str | Path) -> Path:
+    """Write blockade sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty blockade sweep")
+
+
+def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
+    """Read decay sweep rows from a CSV produced by :func:`write_decay_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = [DecaySweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
+
+
+def read_blockade_sweep_csv(path: str | Path) -> list[BlockadeSweepRow]:
+    """Read blockade sweep rows from a CSV produced by :func:`write_blockade_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = [BlockadeSweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
     return rows
