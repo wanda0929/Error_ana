@@ -15,6 +15,7 @@ from src.analytical import epsilon_amplitude, epsilon_blockade, epsilon_decay, e
 from src.errors.amplitude import DEFAULT_SIGMA_OMEGA
 from src.params import DEFAULT_TEMPERATURE_K, K_EFF_RAD_PER_UM, RB87_MASS_KG, get_rydberg_params
 from src.sweeps import (
+    combined_error_budget_rows,
     sweep_amplitude,
     sweep_blockade,
     sweep_decay,
@@ -22,6 +23,7 @@ from src.sweeps import (
     sweep_scattering,
     write_amplitude_sweep_csv,
     write_blockade_sweep_csv,
+    write_combined_budget_csv,
     write_decay_sweep_csv,
     write_doppler_sweep_csv,
     write_scattering_sweep_csv,
@@ -33,6 +35,7 @@ BLOCKADE_SWEEP_CSV = ROOT / "figures" / "blockade_sweep.csv"
 DOPPLER_SWEEP_CSV = ROOT / "figures" / "doppler_sweep.csv"
 SCATTERING_SWEEP_CSV = ROOT / "figures" / "scattering_sweep.csv"
 AMPLITUDE_SWEEP_CSV = ROOT / "figures" / "amplitude_sweep.csv"
+COMBINED_BUDGET_CSV = ROOT / "figures" / "combined_error_budget.csv"
 BASELINE_INTERMEDIATE_DETUNING_MHZ = 1000.0
 
 
@@ -64,6 +67,12 @@ def main() -> None:
     amplitude_rows = sweep_amplitude(num_points=25, n_samples=500)
     amplitude_path = write_amplitude_sweep_csv(amplitude_rows, AMPLITUDE_SWEEP_CSV)
     baseline_amplitude_error = epsilon_amplitude(DEFAULT_SIGMA_OMEGA)
+
+    combined_rows = combined_error_budget_rows(n_samples=24, seed=2024, individual_n_samples=300)
+    combined_path = write_combined_budget_csv(combined_rows, COMBINED_BUDGET_CSV)
+    additive_row = next(row for row in combined_rows if row.source == "Total (additive)")
+    combined_row = next(row for row in combined_rows if row.source == "Total (combined)")
+    relative_gap = abs(additive_row.numerical_error - combined_row.numerical_error) / combined_row.numerical_error
 
     print(params.summary())
     print(f"Decay sweep points: {len(decay_rows)}")
@@ -114,6 +123,12 @@ def main() -> None:
     print(f"Evered-like fractional Rabi noise: {DEFAULT_SIGMA_OMEGA * 100.0:.1f}%")
     print(f"Baseline analytical amplitude-noise error: {baseline_amplitude_error:.4e}")
     print(f"Saved {amplitude_path.relative_to(ROOT)}")
+
+    print("Combined baseline budget:")
+    print(f"Additive numerical sum: {additive_row.numerical_error:.4e}")
+    print(f"Full combined numerical error: {combined_row.numerical_error:.4e}")
+    print(f"Relative additive-vs-combined gap: {relative_gap:.1%}")
+    print(f"Saved {combined_path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

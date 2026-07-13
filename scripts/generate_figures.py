@@ -22,8 +22,10 @@ from src.params import DEFAULT_TEMPERATURE_K, get_rydberg_params
 from src.sweeps import (
     amplitude_sigma_grid,
     blockade_ratios,
+    combined_error_budget_rows,
     read_amplitude_sweep_csv,
     read_blockade_sweep_csv,
+    read_combined_budget_csv,
     read_decay_sweep_csv,
     read_doppler_sweep_csv,
     read_scattering_sweep_csv,
@@ -35,6 +37,7 @@ from src.sweeps import (
     sweep_scattering,
     write_amplitude_sweep_csv,
     write_blockade_sweep_csv,
+    write_combined_budget_csv,
     write_decay_sweep_csv,
     write_doppler_sweep_csv,
     write_scattering_sweep_csv,
@@ -46,11 +49,13 @@ BLOCKADE_SWEEP_CSV = ROOT / "figures" / "blockade_sweep.csv"
 DOPPLER_SWEEP_CSV = ROOT / "figures" / "doppler_sweep.csv"
 SCATTERING_SWEEP_CSV = ROOT / "figures" / "scattering_sweep.csv"
 AMPLITUDE_SWEEP_CSV = ROOT / "figures" / "amplitude_sweep.csv"
+COMBINED_BUDGET_CSV = ROOT / "figures" / "combined_error_budget.csv"
 DECAY_FIGURE = ROOT / "figures" / "fidelity_vs_decay_rate.png"
 BLOCKADE_FIGURE = ROOT / "figures" / "fidelity_vs_blockade.png"
 DOPPLER_FIGURE = ROOT / "figures" / "fidelity_vs_temperature.png"
 SCATTERING_FIGURE = ROOT / "figures" / "fidelity_vs_detuning.png"
 AMPLITUDE_FIGURE = ROOT / "figures" / "fidelity_vs_amplitude_noise.png"
+COMBINED_FIGURE = ROOT / "figures" / "error_budget_combined.png"
 BASELINE_INTERMEDIATE_DETUNING_MHZ = 1000.0
 
 
@@ -91,6 +96,14 @@ def _load_or_create_amplitude_rows():
         return read_amplitude_sweep_csv(AMPLITUDE_SWEEP_CSV)
     rows = sweep_amplitude(num_points=25, n_samples=500)
     write_amplitude_sweep_csv(rows, AMPLITUDE_SWEEP_CSV)
+    return rows
+
+
+def _load_or_create_combined_rows():
+    if COMBINED_BUDGET_CSV.exists():
+        return read_combined_budget_csv(COMBINED_BUDGET_CSV)
+    rows = combined_error_budget_rows(n_samples=24, seed=2024, individual_n_samples=300)
+    write_combined_budget_csv(rows, COMBINED_BUDGET_CSV)
     return rows
 
 
@@ -471,6 +484,58 @@ def plot_amplitude_sweep(output_path: Path = AMPLITUDE_FIGURE) -> Path:
     return output_path
 
 
+def plot_error_budget_bar_chart(output_path: Path = COMBINED_FIGURE) -> Path:
+    """Plot the final baseline error budget on a log scale."""
+
+    rows = _load_or_create_combined_rows()
+    labels = [row.source for row in rows]
+    values = np.array([row.numerical_error for row in rows], dtype=float)
+    analytical = np.array([row.analytical_error for row in rows], dtype=float)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(8.0, 4.8), constrained_layout=True)
+    x = np.arange(len(rows))
+    colors = ["#bf616a", "#d08770", "#ebcb8b", "#b48ead", "#5e81ac", "#4c566a", "#a3be8c"]
+    hatches = ["", "", "", "", "", "//", "\\\\"]
+    bars = ax.bar(x, values, color=colors, edgecolor="#2e3440", linewidth=0.8)
+    for bar, hatch in zip(bars, hatches):
+        bar.set_hatch(hatch)
+
+    ax.scatter(
+        x,
+        analytical,
+        marker="_",
+        s=220,
+        color="#2e3440",
+        linewidth=1.8,
+        zorder=4,
+        label="Analytical estimate",
+    )
+    ax.set_yscale("log")
+    ax.set_title("Baseline Rydberg CZ error budget")
+    ax.set_ylabel(r"Infidelity $1-F_{\mathrm{avg}}$")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=28, ha="right")
+    ax.grid(True, axis="y", which="both", alpha=0.22)
+    ax.legend(frameon=False, loc="upper right")
+
+    additive = next(row for row in rows if row.source == "Total (additive)").numerical_error
+    combined = next(row for row in rows if row.source == "Total (combined)").numerical_error
+    gap = abs(additive - combined) / combined if combined else 0.0
+    ax.text(
+        0.03,
+        0.08,
+        f"additive vs combined gap: {gap:.1%}",
+        transform=ax.transAxes,
+        fontsize=10,
+        color="#2e3440",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "white", "edgecolor": "#d8dee9", "alpha": 0.92},
+    )
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+    return output_path
+
+
 def main() -> None:
     outputs = [
         plot_decay_sweep(),
@@ -478,6 +543,7 @@ def main() -> None:
         plot_doppler_sweep(),
         plot_scattering_sweep(),
         plot_amplitude_sweep(),
+        plot_error_budget_bar_chart(),
     ]
     for output_path in outputs:
         print(f"Saved {output_path.relative_to(ROOT)}")

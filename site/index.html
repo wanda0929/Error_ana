@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, and Scattering</title>
+  <title>Rydberg CZ Gate Error Analysis — Full Error Budget</title>
   <script>
     window.MathJax = {
       tex: {
@@ -684,6 +684,8 @@
         <a class="button" href="#sec-error-doppler">Doppler</a>
         <a class="button" href="#sec-error-scattering">Scattering</a>
         <a class="button" href="#sec-error-amplitude">Amplitude</a>
+        <a class="button" href="#sec-combined-budget">Combined</a>
+        <a class="button" href="#sec-summary-table">Summary</a>
         <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
         <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
       </div>
@@ -691,8 +693,8 @@
 
     <header class="hero">
       <span class="eyebrow">π–2π–π blockade protocol</span>
-      <h1>A Rydberg CZ gate, from first contact to the ideal sanity check</h1>
-      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the ideal-gate baseline and the implemented error channels in the budget.</p>
+      <h1>A Rydberg CZ gate, from first contact to the final error budget</h1>
+      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the ideal-gate baseline, each implemented error channel, and the final combined error budget.</p>
 
       <div class="hero-grid">
         <div class="card highlight">
@@ -1277,6 +1279,101 @@
       <div id="comments-sec-error-amplitude" class="comments no-print"></div>
     </section>
 
+    <section id="sec-combined-budget" data-section="Combined Error Budget">
+      <div class="section-heading">
+        <span class="section-number">08</span>
+        <h2>Combined Error Budget</h2>
+      </div>
+
+      <div class="callout">The useful question is not just “what does each error do alone?” but whether the errors remain additive when they all act during the same gate.</div>
+
+      <p class="lead">For small, mostly independent errors, the total infidelity should be close to the sum of the isolated contributions:</p>
+      <div class="math-box">
+        $$
+        \epsilon_{\mathrm{add}} = \epsilon_{\mathrm{decay}} + \epsilon_{\mathrm{block}} + \epsilon_{\mathrm{Doppler}} + \epsilon_{\mathrm{scatter}} + \epsilon_{\mathrm{amp}}.
+        $$
+      </div>
+
+      <p>The numerical combined calculation puts all five mechanisms into one model: a 9-state basis with the dark qubit state $|0\rangle$, the laser-coupled ground state $|g\rangle$, the Rydberg state $|r\rangle$, and the doubly excited $|rr\rangle$ state. Decay and intermediate scattering enter as Lindblad collapse operators; finite blockade, Doppler shifts, and Rabi-amplitude noise enter through the Hamiltonian and a Monte Carlo average over shots.</p>
+
+      <details>
+        <summary>What “combined” means here</summary>
+        <div class="details-body">
+          <p>Each Monte Carlo shot samples a fractional Rabi error $\varepsilon$ and atom velocities $v_1,v_2$. The Hamiltonian for that shot uses $\Omega' = \Omega(1+\varepsilon)$, detunings $\delta_i=k_{\mathrm{eff}}v_i$, and the finite blockade shift $U|rr\rangle\langle rr|$. The density matrix then evolves through the same $\pi$–$2\pi$–$\pi$ sequence with decay and scattering collapse operators active during the relevant pulse segments.</p>
+          <p>The process matrix is reconstructed by propagating the 16 computational basis operators and evaluating the Pedersen average gate fidelity after the known local-$Z$ frame correction. This is slower than adding five numbers, but it is the check that tells us whether adding five numbers is honest.</p>
+        </div>
+      </details>
+
+      <figure class="figure-card" aria-labelledby="combined-figure-title">
+        <h3 id="combined-figure-title">Baseline error budget</h3>
+        <img src="../figures/error_budget_combined.png" alt="Bar chart of individual Rydberg CZ error contributions, additive total, and full combined numerical result." onerror="showCombinedFallback(this)">
+        <div id="combined-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/error_budget_combined.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the combined error-budget bar chart.</p>
+        </div>
+        <figcaption>The first five bars are isolated numerical errors at the baseline operating point. The additive bar sums those isolated numerical errors; the combined bar comes from the unified simulation with all five channels active.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag rydberg">Dominant term</span>
+          <h3>scattering leads</h3>
+          <p>At $\Delta_p/2\pi=1\,\mathrm{GHz}$, intermediate-state scattering is the largest modeled contribution.</p>
+        </div>
+        <div class="card">
+          <span class="tag accent">Additivity check</span>
+          <h3>agreement at the percent level</h3>
+          <p>The additive numerical sum and full combined simulation are close at the baseline point, so cross-terms are not the story here.</p>
+        </div>
+        <div class="card highlight">
+          <span class="tag blockade">Takeaway</span>
+          <p><strong>The budget is perturbative enough:</strong> fix the largest isolated bars first; the combined simulation does not reveal a hidden catastrophic interaction.</p>
+        </div>
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-combined-budget', 'Combined Error Budget')">💬 Ask about this section</button>
+      <div id="comments-sec-combined-budget" class="comments no-print"></div>
+    </section>
+
+    <section id="sec-summary-table" data-section="Summary Table">
+      <div class="section-heading">
+        <span class="section-number">09</span>
+        <h2>Summary table</h2>
+      </div>
+
+      <p class="lead">This table is the compact error budget at the baseline operating point. Analytical estimates are scaling-law values; numerical values come from the corresponding isolated simulations, except the final row where all channels are active together.</p>
+
+      <div class="table-wrap" aria-label="Rydberg CZ baseline error-budget summary table">
+        <table>
+          <thead>
+            <tr><th>Error source</th><th>Analytical estimate</th><th>Numerical result</th><th>Dominant scaling</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Rydberg decay</td><td>$5.9\times10^{-4}$</td><td>$5.5\times10^{-4}$</td><td>$1/(\Omega\tau)$</td></tr>
+            <tr><td>Finite blockade</td><td>$1.4\times10^{-6}$</td><td>$1.4\times10^{-6}$</td><td>$(\Omega/U)^2$</td></tr>
+            <tr><td>Doppler dephasing</td><td>$9.5\times10^{-5}$</td><td>$\sim10^{-4}$</td><td>$T/\Omega^2$</td></tr>
+            <tr><td><strong>Intermediate scattering</strong></td><td>$1.7\times10^{-2}$</td><td>$8.5\times10^{-3}$</td><td>$1/\Delta_p$</td></tr>
+            <tr><td>Amplitude noise</td><td>$2.0\times10^{-3}$</td><td>$\sim2\times10^{-3}$</td><td>$\sigma_\Omega^2$</td></tr>
+            <tr><td><strong>Total (additive)</strong></td><td>$1.9\times10^{-2}$</td><td>$\sim1.1\times10^{-2}$</td><td>sum of isolated channels</td></tr>
+            <tr><td><strong>Total (combined)</strong></td><td>—</td><td>$\sim1.1\times10^{-2}$</td><td>all channels on</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>Why the analytical and numerical scattering entries differ</summary>
+        <div class="details-body">
+          <p>The analytical scattering formula is a deliberately simple perturbative scaling law. The implemented Lindblad model applies an effective pure-dephasing collapse operator during the driven pulse segments and gives roughly half the analytical estimate at the baseline. That discrepancy is already visible in the isolated scattering section; the final additive comparison therefore uses isolated numerical errors for the apples-to-apples budget check.</p>
+        </div>
+      </details>
+
+      <div class="card highlight">
+        <strong>Final readout:</strong> with the current defaults, intermediate-state scattering and Rabi-amplitude noise dominate. Finite blockade is already negligible at $U/\Omega\approx296$, and Doppler/decay are smaller but not zero.
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-summary-table', 'Summary Table')">💬 Ask about this section</button>
+      <div id="comments-sec-summary-table" class="comments no-print"></div>
+    </section>
+
     <!--
       ERROR-SOURCE SECTION TEMPLATE FOR ISSUES #3-#7
 
@@ -1316,7 +1413,7 @@
     -->
 
     <footer class="footer">
-      <p>This page now covers the introduction, ideal-gate baseline, and five error slices: Rydberg decay, finite blockade, Doppler dephasing, intermediate-state scattering, and amplitude noise. The combined budget and summary table are intentionally left to later issue slices.</p>
+      <p>This page now covers the introduction, ideal-gate baseline, five isolated error channels, the combined error budget, and the final summary table.</p>
       <div class="topbar-actions no-print">
         <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
         <button class="button" type="button" onclick="window.print()">Save as PDF</button>
@@ -1325,7 +1422,7 @@
   </div>
 
   <script>
-    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, Scattering, and Amplitude Noise';
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Full Error Budget';
     const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
     let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
 
@@ -1362,6 +1459,12 @@
     function showAmplitudeFallback(img) {
       img.hidden = true;
       const fallback = document.getElementById('amplitude-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showCombinedFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('combined-fallback');
       if (fallback) fallback.hidden = false;
     }
 
