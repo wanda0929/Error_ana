@@ -23,9 +23,11 @@ The fourth error-channel vertical slice: `src/errors/scattering.py`, `src/analyt
 | `Γ_e` | Natural linewidth of 5P₃/₂ ≈ 2π × 6.07 MHz. Already in `params.py` as `intermediate_linewidth_mhz`. |
 | `Δ_p` | Single-photon detuning from `\|e⟩`. Evered 2023 baseline: ~1 GHz. Sweep parameter. |
 | `Ω_eff` | Effective two-photon Rabi frequency = `Ω₁ × Ω₂ / (2Δ_p)`. Project uses `omega_rad_per_us`. |
-| `Ω₁` | Single-photon Rabi frequency on the 780 nm (lower) leg. |
-| `γ_scatter` | Effective scattering rate while pulse is on: `Γ_e × (Ω₁/(2Δ_p))²`. |
-| Balanced beams | Assumption `Ω₁ = Ω₂`, giving `Ω₁ = √(2Ω_eff Δ_p)` and `γ_scatter = Γ_e Ω_eff/(2Δ_p)`. |
+| `Ω₁` | Single-photon Rabi frequency on the 780 nm (lower/probe) leg. |
+| `Ω₂` | Single-photon Rabi frequency on the 480 nm (upper/coupling) leg. |
+| `q = Ω₁/Ω₂` | Beam ratio. Experiments report 3–12 for 780+480 nm (780 nm is always stronger due to ~600× larger dipole matrix element). |
+| `γ_scatter` | Effective scattering rate while pulse is on. From |g⟩ side: `Γ_e × (Ω₁/(2Δ_p))²`. From |r⟩ side: `Γ_e × (Ω₂/(2Δ_p))²`. Both contribute. |
+| Balanced beams | Special case `Ω₁ = Ω₂`. Minimizes scattering for fixed Ω_eff. Requires extreme 480 nm power (~300 mW into 3 µm waist). |
 | `mesolve` | QuTiP Lindblad master equation solver. Used for all dissipative channels. |
 | `DECAY_BASIS` | 8-state basis `(00, 0g, 0r, g0, gg, gr, r0, rg)` with `\|rr⟩` projected out. Reusable for scattering. |
 
@@ -112,9 +114,9 @@ Single candidate because this is a well-specified feature request, not a bug.
   - *Population-loss model (decay from |r⟩ back to |g⟩ via |e⟩)*: Not correct. Scattering from the intermediate state during a two-photon drive causes decoherence (projects the atom's Rydberg/ground superposition), not population transfer between computational states. The standard model is effective dephasing.
   - *Full 3-level model (include |e⟩ explicitly)*: Overly complex. The adiabatic elimination is valid when Δ_p >> Γ_e, which is satisfied for the entire sweep range (~100 MHz to 100 GHz). Using an effective 2-level model with dephasing is both more efficient and physically clearer.
 - **Assumptions**:
-  - **Beam ratio parameterized** (default Ω₁/Ω₂ = 3, from Zhang 2010). Literature shows 780+480 schemes have inherent asymmetry: the 5S→5P matrix element (~5.18 a₀) is ~600× larger than 5P→70S (~0.0085 a₀). Experiments report ratios of 3:1 (Zhang 2010, Johnson 2008) to 12:1 (Gaëtan 2009, Wilk 2010). Balanced beams require extreme 480 nm power (hundreds of mW) and are not realistic for most setups.
+  - **Beam ratio parameterized** (default `q = Ω₁/Ω₂ = 1`, balanced). The scattering formula `ε ∝ (q + 1/q)/2` is symmetric and minimized at q=1. Experiments achieve ratios of 3:1 (Zhang 2010) to 12:1 (Gaëtan 2009) due to the ~600× dipole moment asymmetry between 5S→5P and 5P→70S, but the penalty is only 1.67× at ratio 3 — modest, and within the factor-of-2 test tolerance.
   - Adiabatic elimination is valid throughout the sweep range.
-  - The collapse operator is dephasing: `L = √(γ_scatter) × |r⟩⟨r|` (pure dephasing in {|g⟩,|r⟩} basis).
+  - The collapse operator is dephasing: `L = √(γ_scatter) × |r⟩⟨r|` (pure dephasing in {|g⟩,|r⟩} basis). During a two-photon drive, |e⟩ gets virtual population from **both** |g⟩ (via Ω₁) and |r⟩ (via Ω₂). Both contribute to scattering.
 - **Maintainer decision needed**: Choice of dephasing operator. The AGENTS.md says "effective dephasing Lindblad channel." Two natural choices:
   1. `L = √(γ_scatter) |r⟩⟨r|` — dephases the Rydberg state relative to ground. Standard for two-photon scattering.
   2. `L = √(γ_scatter) |g⟩⟨g|` — equivalent physics (up to a Lamb shift) since σ_z = 2|r⟩⟨r| - I.
@@ -126,19 +128,23 @@ Single candidate because this is a well-specified feature request, not a bug.
 ### Ordered implementation steps
 
 1. **Add `epsilon_scattering()` to `src/analytical.py`**
-   - General formula: `ε_scatter = (7π/8) × (Γ_e / Δ_p) × (Ω₁/Ω₂)`
-   - Derivation: scattering rate `R_sc = Γ_e × (Ω₁/(2Δ_p))²` × Rydberg occupation time `T_R = 7π/(4Ω_eff)` where `Ω_eff = Ω₁Ω₂/(2Δ_p)` → product is `7πΓ_eΩ₁/(8Δ_pΩ₂)`
-   - For balanced beams (Ω₁=Ω₂): reduces to `7πΓ_e/(8Δ_p)` (independent of Ω)
-   - Input: `gamma_e` (rad/μs), `delta_p` (rad/μs), `omega1_over_omega2` (default=3.0 from Zhang 2010)
-   - Validation: at Δ_p = 2π × 1000 MHz with ratio=3, expect ε ≈ 0.050
+   - General formula: `ε_scatter = (7π/8) × (Γ_e / Δ_p) × (q + 1/q) / 2` where `q = Ω₁/Ω₂`
+   - Derivation: during a π-pulse, the atom time-averages 50% in |g⟩ and 50% in |r⟩. Virtual |e⟩ population comes from both sides: `(Ω₁/(2Δ_p))²` from |g⟩, `(Ω₂/(2Δ_p))²` from |r⟩. The time-averaged scattering rate is `Γ_e(Ω₁² + Ω₂²)/(8Δ_p²)`. Multiply by pulse duration `π/Ω_eff = 2πΔ_p/(Ω₁Ω₂)` to get scatter per π-pulse: `πΓ_e/(4Δ_p) × (q + 1/q)`. Sum over 7/2 effective π-pulses for the CZ gate → `(7π/8) × (Γ_e/Δ_p) × (q + 1/q)/2`.
+   - For balanced beams (q=1): reduces to `7πΓ_e/(8Δ_p)` (independent of Ω, minimum)
+   - At ratio q=3 (or 1/3): penalty factor = (3 + 1/3)/2 = 1.67×
+   - Input: `gamma_e` (rad/μs), `delta_p` (rad/μs), `omega1_over_omega2` (default=1.0, balanced)
+   - Validation: at Δ_p = 2π × 1000 MHz, balanced: ε ≈ 0.017; ratio=3: ε ≈ 0.028
 
 2. **Create `src/errors/scattering.py`**
    - Reuse `DECAY_BASIS` and Hamiltonian infrastructure from `decay.py`
-   - Collapse operator: `√(γ_scatter) × |r⟩⟨r|` on the driven atom only (active during that atom's pulse segment)
-   - Key difference from decay: collapse operator acts only during the pulse on that specific atom, not throughout. Atom 1's scattering is active during steps 1 and 3; atom 2's during step 2.
-   - Interface: `run_scattering_gate(omega, gamma_e, delta_p, omega1_over_omega2=3.0) -> ScatteringGateResult`
-   - Internally compute `Ω₁ = omega * sqrt(omega1_over_omega2) * sqrt(2*delta_p/omega)` (from Ω_eff and ratio), then `γ_scatter = gamma_e × (Ω₁/(2*delta_p))²`
-   - Or equivalently: `γ_scatter = gamma_e * omega * omega1_over_omega2 / (2 * delta_p)` (angular units throughout)
+   - **Two** dephasing collapse operators per driven atom: one for virtual |e⟩ from |g⟩ side, one from |r⟩ side:
+     - `L_g = √(γ_g) × |r⟩⟨r|` with `γ_g = Γ_e × (Ω₁/(2Δ_p))²`
+     - `L_r = √(γ_r) × |r⟩⟨r|` with `γ_r = Γ_e × (Ω₂/(2Δ_p))²`
+     - (Or equivalently, one operator with combined rate `γ_total = Γ_e(Ω₁² + Ω₂²)/(4Δ_p²)`)
+   - Active only during the pulse on that specific atom. Atom 1's scattering: steps 1 and 3; atom 2's: step 2.
+   - Interface: `run_scattering_gate(omega, gamma_e, delta_p, omega1_over_omega2=1.0) -> ScatteringGateResult`
+   - Internally compute: `Ω₁ = sqrt(q × 2Ω_effΔ_p)`, `Ω₂ = sqrt(2Ω_effΔ_p/q)` where `q = omega1_over_omega2` and `Ω_eff = omega`
+   - Then `γ_total = gamma_e × (Ω₁² + Ω₂²) / (4 × delta_p²)`
    - Use same Choi → Kraus → Pedersen pipeline as `decay.py`
 
 3. **Add `sweep_scattering()` to `src/sweeps.py`**
@@ -226,19 +232,20 @@ python scripts/generate_figures.py  # should produce fidelity_vs_detuning.png
 - All three tests pass
 - `figures/fidelity_vs_detuning.png` exists with correct content
 - Analytical and numerical curves show 1/Δ_p scaling
-- At Δ_p = 1 GHz, infidelity ≈ 1-2% (consistent with 7πΓ_e/(8Δ_p) ≈ 0.017)
+- At Δ_p = 1 GHz, balanced: infidelity ≈ 1.7% (= 7πΓ_e/(8Δ_p)). At ratio 3: ≈ 2.8%.
 
 ### Negative/edge validation
 
 - At Δ_p = 100 MHz (very close to resonance), formula may break down — adiabatic elimination requires Δ_p >> Γ_e ≈ 6 MHz. At 100 MHz this ratio is ~16, still OK but approaching the limit. If numerical diverges from analytical here, that's expected physics, not a bug.
-- The formula `7πΓ_e/(8Δ_p)` being Ω-independent is non-obvious — verify this holds in the simulation by checking two different Ω values give the same ε at the same Δ_p.
+- The balanced formula `7πΓ_e/(8Δ_p)` being Ω-independent is non-obvious — verify this holds in the simulation by checking two different Ω values give the same ε at the same Δ_p.
+- **Ratio symmetry check**: run at q=3 and q=1/3 and verify identical infidelity. This tests that both scattering channels (from |g⟩ side and |r⟩ side) are correctly modeled.
 
 ## 7. Risks, edge cases, rollback
 
 ### Risks
 
 - **Collapse operator choice matters**: If using `|g⟩⟨g|` instead of `|r⟩⟨r|`, the resulting dephasing is the same (both project onto the σ_z eigenbasis), but the Lamb shift differs. For the pure dephasing model, these are equivalent up to a unitary rotation that gets absorbed into the local-Z correction. Should still verify numerically.
-- **Balanced-beam assumption**: Real experiments may not have Ω₁ = Ω₂. The analytical formula `7πΓ_e/(8Δ_p)` assumes this. If the factor-2 tolerance test fails, the unbalanced formula `(Γ_e/Δ_p) × (Ω_eff/Ω₁) × (π/Ω_eff) × N` is the fallback.
+- **Beam ratio**: The general formula `(7π/8)(Γ_e/Δ_p)(q+1/q)/2` includes the beam ratio `q = Ω₁/Ω₂`. The function `q + 1/q` is symmetric: ratios 3:1 and 1:3 give identical scattering. Balanced (q=1) is the minimum. Experimental ratios of 3 penalize by only 1.67×. The Lindblad simulation should reproduce this symmetry as a consistency check.
 - **Scattering during non-driven periods**: If atom 1 is in |r⟩ during step 2, is there still scattering on atom 1? No — the scattering comes from virtual population in |e⟩, which only exists while the drive laser is on. Collapse ops should only be active during the relevant pulse.
 
 ### Edge cases
@@ -264,10 +271,10 @@ Module is self-contained. If scattering code is wrong, deleting `src/errors/scat
 
 ### Q2: Does the analytical formula use Γ_e as angular frequency or cycles?
 
-- **What was found**: ARC returns `intermediate_decay_rate_per_us = 38.113 μs⁻¹` which is `Γ_e` in angular frequency (= 2π × 6.066 MHz). The formula `7πΓ_eΩ₁/(8Δ_pΩ₂)` works when Γ_e and Δ_p are in the same angular units; the ratio Ω₁/Ω₂ is dimensionless.
+- **What was found**: ARC returns `intermediate_decay_rate_per_us = 38.113 μs⁻¹` which is `Γ_e` in angular frequency (= 2π × 6.066 MHz). The formula `(7π/8) × (Γ_e/Δ_p) × (q + 1/q)/2` works when Γ_e and Δ_p are in the same angular units; `q` is dimensionless.
 - **Why it is ambiguous**: Literature sometimes quotes Γ_e/2π in MHz and Δ_p in GHz, leading to factor-of-2π confusion.
 - **Options**: Use angular units throughout (matching `params.py` convention)
-- **Recommended default**: Express everything in rad/μs. `epsilon_scattering(gamma_e_rad_per_us, delta_p_rad_per_us, omega1_over_omega2=3.0)` with documentation stating units.
+- **Recommended default**: Express everything in rad/μs. `epsilon_scattering(gamma_e_rad_per_us, delta_p_rad_per_us, omega1_over_omega2=1.0)` with documentation stating units.
 
 ### Q3: HTML section numbering — 05 or 06?
 
