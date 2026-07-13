@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Rydberg Decay, Finite Blockade, and Intermediate-State Scattering</title>
+  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, and Scattering</title>
   <script>
     window.MathJax = {
       tex: {
@@ -681,6 +681,7 @@
         <a class="button" href="#sec-ideal-gate">Ideal gate</a>
         <a class="button" href="#sec-error-decay">Decay</a>
         <a class="button" href="#sec-error-blockade">Blockade</a>
+        <a class="button" href="#sec-error-doppler">Doppler</a>
         <a class="button" href="#sec-error-scattering">Scattering</a>
         <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
         <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
@@ -690,7 +691,7 @@
     <header class="hero">
       <span class="eyebrow">π–2π–π blockade protocol</span>
       <h1>A Rydberg CZ gate, from first contact to the ideal sanity check</h1>
-      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the ideal-gate baseline and the first implemented error channels in the budget.</p>
+      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the ideal-gate baseline and the implemented error channels in the budget.</p>
 
       <div class="hero-grid">
         <div class="card highlight">
@@ -1100,9 +1101,66 @@
       <div id="comments-sec-error-blockade" class="comments no-print"></div>
     </section>
 
-    <section id="sec-error-scattering" data-section="Error: Intermediate-State Scattering" class="error-section">
+    <section id="sec-error-doppler" data-section="Error: Doppler Dephasing" class="error-section">
       <div class="section-heading">
         <span class="section-number">05</span>
+        <h2>Doppler Dephasing</h2>
+      </div>
+
+      <div class="callout">Hot atoms see the Rydberg lasers slightly off resonance; the resulting shot-to-shot detuning turns clean Rabi pulses into slightly wrong rotations.</div>
+
+      <p class="lead">Even laser-cooled atoms move. If an atom has velocity $v$ along the excitation axis, the two-photon drive is Doppler shifted by $\delta = k_{\mathrm{eff}} v$. In one experimental shot this is a fixed detuning, so the evolution is coherent; the dephasing appears only after averaging many shots with different thermal velocities.</p>
+
+      <p>For the counter-propagating 780 nm and 480 nm rubidium beams used here, the effective wavevector is small compared with a single optical wavevector:</p>
+
+      <div class="math-box">
+        $$k_{\mathrm{eff}} = 2\pi\left|\frac{1}{0.780\,\mu\mathrm{m}}-\frac{1}{0.480\,\mu\mathrm{m}}\right| \approx 5.03\,\mathrm{rad}/\mu\mathrm{m},$$
+        $$\epsilon_{\mathrm{D}} = \frac{\pi^2}{4}\frac{k_{\mathrm{eff}}^2 k_B T}{m\Omega^2}.$$
+      </div>
+
+      <p>The numerical model samples independent axial velocities for the two atoms from a Maxwell-Boltzmann distribution, runs the same $\pi$–$2\pi$–$\pi$ sequence with the sampled detunings, and averages the Pedersen fidelity over the ensemble. No Lindblad operator is used, because Doppler motion is classical shot-to-shot noise in this model, not spontaneous emission during a shot.</p>
+
+      <details>
+        <summary>Derivation sketch</summary>
+        <div class="details-body">
+          <p>For a detuned two-level pulse, the generalized Rabi frequency is $\Omega_R=\sqrt{\Omega^2+\delta^2}$. Expanding the detuned pulse propagator for $|\delta|\ll\Omega$ shows that the leading correction to a resonant pulse is quadratic in $\delta/\Omega$ after the symmetric velocity distribution removes the linear term.</p>
+          <p>The one-dimensional thermal average gives $\langle v^2\rangle=k_B T/m$, hence $\langle\delta^2\rangle=k_{\mathrm{eff}}^2 k_B T/m$. For the $\pi$–$2\pi$–$\pi$ blockade sequence, the detuned-Rabi sensitivity contributes the standard protocol factor $\pi^2/4$, giving the formula above.</p>
+        </div>
+      </details>
+
+      <figure class="figure-card" aria-labelledby="doppler-figure-title">
+        <h3 id="doppler-figure-title">Fidelity versus atom temperature</h3>
+        <img src="../figures/fidelity_vs_temperature.png" alt="Average CZ gate fidelity versus atom temperature, comparing Doppler Monte Carlo simulation with the analytical formula." onerror="showDopplerFallback(this)">
+        <div id="doppler-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/fidelity_vs_temperature.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the Doppler Monte Carlo sweep and figure.</p>
+        </div>
+        <figcaption>Numerical points average coherent gate simulations over thermal velocities; error bars show the Monte Carlo standard error. The analytical curve is $F_{\mathrm{avg}}\approx1-\epsilon_D$, and the dashed reference line marks the $10\,\mu\mathrm{K}$ Evered-like operating point.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag accent">Scaling</span>
+          <h3>$\epsilon_D\propto T/\Omega^2$</h3>
+          <p>Colder atoms and faster Rabi pulses suppress Doppler dephasing quadratically through $\delta/\Omega$.</p>
+        </div>
+        <div class="card">
+          <span class="tag ground">Baseline</span>
+          <h3>$\epsilon_D\approx9.5\times10^{-5}$</h3>
+          <p>At $T=10\,\mu\mathrm{K}$ and $\Omega/2\pi=4\,\mathrm{MHz}$, Doppler is visible but smaller than the leading decay estimate in this model.</p>
+        </div>
+        <div class="card highlight">
+          <span class="tag blockade">Takeaway</span>
+          <p><strong>This error dominates when</strong> atoms are warm, gates are slow, or the excitation geometry has a large effective wavevector.</p>
+        </div>
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-error-doppler', 'Doppler Dephasing')">💬 Ask about this section</button>
+      <div id="comments-sec-error-doppler" class="comments no-print"></div>
+    </section>
+
+    <section id="sec-error-scattering" data-section="Error: Intermediate-State Scattering" class="error-section">
+      <div class="section-heading">
+        <span class="section-number">06</span>
         <h2>Intermediate-State Scattering</h2>
       </div>
 
@@ -1198,7 +1256,7 @@
     -->
 
     <footer class="footer">
-      <p>This page now covers the introduction, ideal-gate baseline, Rydberg decay, finite blockade, and intermediate-state scattering. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
+      <p>This page now covers the introduction, ideal-gate baseline, and four error slices: Rydberg decay, finite blockade, Doppler dephasing, and intermediate-state scattering. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
       <div class="topbar-actions no-print">
         <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
         <button class="button" type="button" onclick="window.print()">Save as PDF</button>
@@ -1207,7 +1265,7 @@
   </div>
 
   <script>
-    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Rydberg Decay, Finite Blockade, and Intermediate-State Scattering';
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, and Scattering';
     const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
     let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
 
@@ -1226,6 +1284,12 @@
     function showBlockadeFallback(img) {
       img.hidden = true;
       const fallback = document.getElementById('blockade-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showDopplerFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('doppler-fallback');
       if (fallback) fallback.hidden = false;
     }
 
