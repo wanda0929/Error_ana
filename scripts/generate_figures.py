@@ -16,28 +16,35 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.analytical import epsilon_blockade
+from src.analytical import epsilon_blockade, epsilon_scattering
 from src.params import DEFAULT_TEMPERATURE_K, get_rydberg_params
 from src.sweeps import (
     blockade_ratios,
     read_blockade_sweep_csv,
     read_decay_sweep_csv,
     read_doppler_sweep_csv,
+    read_scattering_sweep_csv,
+    scattering_detunings_mhz,
     sweep_blockade,
     sweep_decay,
     sweep_doppler,
+    sweep_scattering,
     write_blockade_sweep_csv,
     write_decay_sweep_csv,
     write_doppler_sweep_csv,
+    write_scattering_sweep_csv,
 )
 
 
 DECAY_SWEEP_CSV = ROOT / "figures" / "decay_sweep.csv"
 BLOCKADE_SWEEP_CSV = ROOT / "figures" / "blockade_sweep.csv"
 DOPPLER_SWEEP_CSV = ROOT / "figures" / "doppler_sweep.csv"
+SCATTERING_SWEEP_CSV = ROOT / "figures" / "scattering_sweep.csv"
 DECAY_FIGURE = ROOT / "figures" / "fidelity_vs_decay_rate.png"
 BLOCKADE_FIGURE = ROOT / "figures" / "fidelity_vs_blockade.png"
 DOPPLER_FIGURE = ROOT / "figures" / "fidelity_vs_temperature.png"
+SCATTERING_FIGURE = ROOT / "figures" / "fidelity_vs_detuning.png"
+BASELINE_INTERMEDIATE_DETUNING_MHZ = 1000.0
 
 
 def _load_or_create_decay_rows():
@@ -61,6 +68,14 @@ def _load_or_create_doppler_rows():
         return read_doppler_sweep_csv(DOPPLER_SWEEP_CSV)
     rows = sweep_doppler(num_points=25, n_samples=500)
     write_doppler_sweep_csv(rows, DOPPLER_SWEEP_CSV)
+    return rows
+
+
+def _load_or_create_scattering_rows():
+    if SCATTERING_SWEEP_CSV.exists():
+        return read_scattering_sweep_csv(SCATTERING_SWEEP_CSV)
+    rows = sweep_scattering(num_points=25)
+    write_scattering_sweep_csv(rows, SCATTERING_SWEEP_CSV)
     return rows
 
 
@@ -262,8 +277,103 @@ def plot_doppler_sweep(output_path: Path = DOPPLER_FIGURE) -> Path:
     return output_path
 
 
+def plot_scattering_sweep(output_path: Path = SCATTERING_FIGURE) -> Path:
+    """Plot numerical and analytical infidelity versus intermediate detuning."""
+
+    params = get_rydberg_params()
+    rows = _load_or_create_scattering_rows()
+    x_ghz = np.array([row.delta_p_mhz / 1000.0 for row in rows], dtype=float)
+    numerical = np.array([row.numerical_error for row in rows], dtype=float)
+    analytical_points = np.array([row.analytical_error for row in rows], dtype=float)
+
+    if x_ghz.size < 2:
+        detunings = scattering_detunings_mhz(num=25)
+        rows = sweep_scattering(detunings_mhz=detunings)
+        write_scattering_sweep_csv(rows, SCATTERING_SWEEP_CSV)
+        x_ghz = np.array([row.delta_p_mhz / 1000.0 for row in rows], dtype=float)
+        numerical = np.array([row.numerical_error for row in rows], dtype=float)
+        analytical_points = np.array([row.analytical_error for row in rows], dtype=float)
+
+    x_curve_mhz = np.geomspace(x_ghz.min() * 1000.0, x_ghz.max() * 1000.0, 400)
+    analytical_curve = np.array(
+        [
+            epsilon_scattering(params.intermediate_decay_rate_per_us, 2.0 * np.pi * detuning_mhz)
+            for detuning_mhz in x_curve_mhz
+        ],
+        dtype=float,
+    )
+    baseline_error = epsilon_scattering(
+        params.intermediate_decay_rate_per_us,
+        2.0 * np.pi * BASELINE_INTERMEDIATE_DETUNING_MHZ,
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(7.0, 4.3), constrained_layout=True)
+    ax.plot(
+        x_curve_mhz / 1000.0,
+        analytical_curve,
+        color="#5e81ac",
+        lw=2.4,
+        label=r"Analytical $\propto \Gamma_e/\Delta_p$",
+    )
+    ax.scatter(
+        x_ghz,
+        numerical,
+        s=38,
+        color="#b48ead",
+        edgecolor="#2e3440",
+        linewidth=0.7,
+        zorder=3,
+        label="Lindblad simulation",
+    )
+    ax.scatter(
+        x_ghz,
+        analytical_points,
+        s=18,
+        color="#5e81ac",
+        alpha=0.45,
+        label="Analytical sweep points",
+    )
+    ax.axvline(
+        BASELINE_INTERMEDIATE_DETUNING_MHZ / 1000.0,
+        color="#a3be8c",
+        lw=1.6,
+        ls="--",
+        label=r"Evered-like $\Delta_p/2\pi=1\,GHz$",
+    )
+    ax.scatter(
+        [BASELINE_INTERMEDIATE_DETUNING_MHZ / 1000.0],
+        [baseline_error],
+        marker="*",
+        s=145,
+        color="#ebcb8b",
+        edgecolor="#2e3440",
+        zorder=4,
+    )
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_title("Intermediate-state scattering in the Rydberg CZ gate")
+    ax.set_xlabel(r"Intermediate detuning $\Delta_p/2\pi$ (GHz)")
+    ax.set_ylabel(r"CZ infidelity $1-F_{\mathrm{avg}}$")
+    ax.grid(True, which="both", alpha=0.22)
+    ax.set_xlim(x_ghz.min() * 0.92, x_ghz.max() * 1.08)
+    ax.legend(frameon=False, loc="upper right")
+    ax.text(
+        0.04,
+        0.06,
+        "larger detuning → less virtual 5P scattering",
+        transform=ax.transAxes,
+        color="#4c566a",
+        fontsize=10,
+    )
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+    return output_path
+
+
 def main() -> None:
-    outputs = [plot_decay_sweep(), plot_blockade_sweep(), plot_doppler_sweep()]
+    outputs = [plot_decay_sweep(), plot_blockade_sweep(), plot_doppler_sweep(), plot_scattering_sweep()]
     for output_path in outputs:
         print(f"Saved {output_path.relative_to(ROOT)}")
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Rydberg Decay, and Finite Blockade</title>
+  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, and Scattering</title>
   <script>
     window.MathJax = {
       tex: {
@@ -682,6 +682,7 @@
         <a class="button" href="#sec-error-decay">Decay</a>
         <a class="button" href="#sec-error-blockade">Blockade</a>
         <a class="button" href="#sec-error-doppler">Doppler</a>
+        <a class="button" href="#sec-error-scattering">Scattering</a>
         <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
         <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
       </div>
@@ -690,7 +691,7 @@
     <header class="hero">
       <span class="eyebrow">π–2π–π blockade protocol</span>
       <h1>A Rydberg CZ gate, from first contact to the ideal sanity check</h1>
-      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the reader-facing scaffold and the ideal-gate baseline that every error budget section will build on.</p>
+      <p class="subtitle">Two rubidium atoms, one auxiliary Rydberg level, and a blockade interaction turn single-atom laser pulses into a two-qubit controlled phase. This page establishes the ideal-gate baseline and the implemented error channels in the budget.</p>
 
       <div class="hero-grid">
         <div class="card highlight">
@@ -1157,6 +1158,65 @@
       <div id="comments-sec-error-doppler" class="comments no-print"></div>
     </section>
 
+    <section id="sec-error-scattering" data-section="Error: Intermediate-State Scattering" class="error-section">
+      <div class="section-heading">
+        <span class="section-number">06</span>
+        <h2>Intermediate-State Scattering</h2>
+      </div>
+
+      <div class="callout">Two-photon Rydberg excitation avoids putting population in $5P_{3/2}$, but “virtual” is not the same as “harmless”: a small intermediate-state admixture can still scatter photons and dephase the gate.</div>
+
+      <p class="lead">Rubidium reaches $|70S_{1/2}\rangle$ with a 780 nm photon followed by a 480 nm photon. The real excited level $|e\rangle=|5P_{3/2}\rangle$ sits between $|g\rangle$ and $|r\rangle$, but the lasers are detuned by $\Delta_p$ so the gate uses it only virtually. The price is photon scattering from that tiny virtual population.</p>
+
+      <p>A scattered photon carries information about which atom was being driven and destroys phase coherence. In the large-detuning limit we eliminate $|e\rangle$ and model the effect as pure dephasing on the atom receiving the pulse. If $q=\Omega_1/\Omega_2$ is the ratio of the lower-leg and upper-leg single-photon Rabi frequencies, the perturbative CZ error is</p>
+
+      <div class="math-box">
+        $$\epsilon_{\mathrm{sc}} \simeq \frac{7\pi}{8}\frac{\Gamma_e}{\Delta_p}\frac{q+q^{-1}}{2}.$$
+      </div>
+
+      <p>Here $\Gamma_e$ is the natural decay rate of $5P_{3/2}$ and $\Delta_p$ is expressed in the same angular-frequency units. Balanced beams, $q=1$, minimize the scattering and give $\epsilon_{\mathrm{sc}}\simeq7\pi\Gamma_e/(8\Delta_p)$, independent of the two-photon Rabi frequency.</p>
+
+      <details>
+        <summary>Derivation sketch</summary>
+        <div class="details-body">
+          <p>The two-photon Rabi frequency is $\Omega_{\mathrm{eff}}=\Omega_1\Omega_2/(2\Delta_p)$. During a resonant pulse the driven two-level system spends, on average, half its time on each side of the transition. The virtual intermediate-state population is therefore proportional to $(\Omega_1/2\Delta_p)^2$ from the ground side plus $(\Omega_2/2\Delta_p)^2$ from the Rydberg side.</p>
+          <div class="math-box">
+            $$\bar\gamma_{\mathrm{sc}}=\Gamma_e\frac{\Omega_1^2+\Omega_2^2}{8\Delta_p^2},\qquad t_\pi=\frac{\pi}{\Omega_{\mathrm{eff}}}=\frac{2\pi\Delta_p}{\Omega_1\Omega_2}.$$
+          </div>
+          <p>The Lindblad operator is a projector, so the ground-Rydberg coherence decays at half the total scattering collapse rate. That gives a dephasing error per effective $\pi$ pulse of $\pi\Gamma_e(q+q^{-1})/(8\Delta_p)$. The blockade CZ sequence has $7/2$ effective $\pi$ pulses of Rydberg exposure, which yields the formula above. The numerical curve below does not assume that final expression; it uses a Lindblad dephasing channel during each active pulse segment and then reconstructs the two-qubit process fidelity.</p>
+        </div>
+      </details>
+
+      <figure class="figure-card" aria-labelledby="scattering-figure-title">
+        <h3 id="scattering-figure-title">Infidelity versus intermediate detuning</h3>
+        <img src="../figures/fidelity_vs_detuning.png" alt="Intermediate-state scattering CZ infidelity versus one-photon detuning, with numerical Lindblad points, analytical curve, and Evered operating point." onerror="showScatteringFallback(this)">
+        <div id="scattering-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/fidelity_vs_detuning.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the scattering sweep and figure.</p>
+        </div>
+        <figcaption>Numerical dots come from an effective dephasing Lindblad model applied only while an atom is driven. The analytical curve falls as $1/\Delta_p$, and the dashed reference marks an Evered-like $\Delta_p/2\pi=1\,\mathrm{GHz}$ operating point.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag accent">Scaling</span>
+          <h3>$\epsilon_{\mathrm{sc}}\propto\Gamma_e/\Delta_p$</h3>
+          <p>Larger intermediate detuning suppresses scattering linearly, but demands more laser power to keep the same two-photon Rabi frequency.</p>
+        </div>
+        <div class="card">
+          <span class="tag rydberg">Baseline</span>
+          <h3>$\epsilon_{\mathrm{sc}}\approx1.7\times10^{-2}$</h3>
+          <p>For $\Delta_p/2\pi=1\,\mathrm{GHz}$ and balanced beams, this channel is much larger than radiative Rydberg decay in the isolated budget.</p>
+        </div>
+        <div class="card highlight">
+          <span class="tag blockade">Takeaway</span>
+          <p><strong>This error dominates when</strong> the intermediate detuning is small or the single-photon beams are badly imbalanced; pushing farther from $5P_{3/2}$ buys coherence at the cost of laser power.</p>
+        </div>
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-error-scattering', 'Intermediate-State Scattering')">💬 Ask about this section</button>
+      <div id="comments-sec-error-scattering" class="comments no-print"></div>
+    </section>
+
     <!--
       ERROR-SOURCE SECTION TEMPLATE FOR ISSUES #3-#7
 
@@ -1196,7 +1256,7 @@
     -->
 
     <footer class="footer">
-      <p>This page now covers the introduction, ideal-gate baseline, and three error slices: Rydberg decay, finite blockade, and Doppler dephasing. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
+      <p>This page now covers the introduction, ideal-gate baseline, and four error slices: Rydberg decay, finite blockade, Doppler dephasing, and intermediate-state scattering. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
       <div class="topbar-actions no-print">
         <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
         <button class="button" type="button" onclick="window.print()">Save as PDF</button>
@@ -1205,7 +1265,7 @@
   </div>
 
   <script>
-    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, and Doppler';
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, and Scattering';
     const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
     let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
 
@@ -1230,6 +1290,12 @@
     function showDopplerFallback(img) {
       img.hidden = true;
       const fallback = document.getElementById('doppler-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showScatteringFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('scattering-fallback');
       if (fallback) fallback.hidden = false;
     }
 

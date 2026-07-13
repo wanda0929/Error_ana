@@ -9,10 +9,11 @@ from typing import Iterable
 
 import numpy as np
 
-from .analytical import epsilon_blockade, epsilon_decay_from_gamma, epsilon_doppler
+from .analytical import epsilon_blockade, epsilon_decay_from_gamma, epsilon_doppler, epsilon_scattering
 from .errors.blockade import run_blockade_gate
 from .errors.decay import run_decay_gate
 from .errors.doppler import run_doppler_gate_mc
+from .errors.scattering import run_scattering_gate
 from .fidelity import CZ_TARGET, pedersen_fidelity
 from .params import DEFAULT_OMEGA_RAD_PER_US, K_EFF_RAD_PER_UM, RB87_MASS_KG, get_rydberg_params
 
@@ -57,6 +58,19 @@ class DopplerSweepRow:
     analytical_error: float
     analytical_fidelity: float
     n_samples: int
+
+
+@dataclass(frozen=True)
+class ScatteringSweepRow:
+    """One row of the isolated intermediate-state-scattering sweep."""
+
+    delta_p_mhz: float
+    delta_p_rad_per_us: float
+    omega1_over_omega2: float
+    numerical_fidelity: float
+    numerical_error: float
+    analytical_error: float
+    analytical_fidelity: float
 
 
 def _check_positive_finite(name: str, value: float) -> float:
@@ -127,6 +141,21 @@ def doppler_temperature_grid(
     if max_temperature_K <= min_temperature_K:
         raise ValueError("max_temperature_K must be greater than min_temperature_K")
     return np.logspace(np.log10(min_temperature_K), np.log10(max_temperature_K), num_points)
+
+
+def scattering_detunings_mhz(
+    num: int = 25,
+    minimum_mhz: float = 100.0,
+    maximum_mhz: float = 100_000.0,
+) -> np.ndarray:
+    """Return log-spaced intermediate detunings in cycles/us (MHz)."""
+
+    num = _check_num_points(num)
+    minimum_mhz = _check_positive_finite("minimum_mhz", minimum_mhz)
+    maximum_mhz = _check_positive_finite("maximum_mhz", maximum_mhz)
+    if maximum_mhz <= minimum_mhz:
+        raise ValueError("maximum_mhz must be greater than minimum_mhz")
+    return np.geomspace(minimum_mhz, maximum_mhz, num)
 
 
 def sweep_decay(
@@ -290,6 +319,58 @@ def sweep_doppler(
     return rows
 
 
+def sweep_scattering(
+    *,
+    omega: float | None = None,
+    gamma_e: float | None = None,
+    detunings_mhz: Iterable[float] | None = None,
+    num_points: int = 25,
+    omega1_over_omega2: float = 1.0,
+) -> list[ScatteringSweepRow]:
+    """Sweep intermediate detuning and compare simulation with the formula."""
+
+    params = get_rydberg_params()
+    if omega is None:
+        omega = params.omega_rad_per_us
+    if gamma_e is None:
+        gamma_e = params.intermediate_decay_rate_per_us
+    omega = _check_positive_finite("omega", omega)
+    gamma_e = _check_nonnegative_finite("gamma_e", gamma_e)
+    omega1_over_omega2 = _check_positive_finite("omega1_over_omega2", omega1_over_omega2)
+
+    if detunings_mhz is None:
+        detuning_values = scattering_detunings_mhz(num=num_points)
+    else:
+        detuning_values = np.asarray(list(detunings_mhz), dtype=float)
+        if detuning_values.ndim != 1 or detuning_values.size < 2:
+            raise ValueError("detunings_mhz must contain at least two points")
+    if np.any(~np.isfinite(detuning_values)) or np.any(detuning_values <= 0.0):
+        raise ValueError("all detunings_mhz values must be positive and finite")
+
+    rows: list[ScatteringSweepRow] = []
+    for delta_p_mhz in detuning_values:
+        delta_p = 2.0 * np.pi * float(delta_p_mhz)
+        result = run_scattering_gate(
+            omega=omega,
+            gamma_e=gamma_e,
+            delta_p=delta_p,
+            omega1_over_omega2=omega1_over_omega2,
+        )
+        analytical_error = epsilon_scattering(gamma_e, delta_p, omega1_over_omega2)
+        rows.append(
+            ScatteringSweepRow(
+                delta_p_mhz=float(delta_p_mhz),
+                delta_p_rad_per_us=float(delta_p),
+                omega1_over_omega2=float(omega1_over_omega2),
+                numerical_fidelity=float(result.average_gate_fidelity),
+                numerical_error=float(1.0 - result.average_gate_fidelity),
+                analytical_error=float(analytical_error),
+                analytical_fidelity=float(1.0 - analytical_error),
+            )
+        )
+    return rows
+
+
 def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_message: str) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -322,6 +403,12 @@ def write_doppler_sweep_csv(rows: Iterable[DopplerSweepRow], path: str | Path) -
     """Write Doppler sweep rows to CSV and return the path."""
 
     return _write_dataclass_csv(rows, path, empty_message="cannot write an empty Doppler sweep")
+
+
+def write_scattering_sweep_csv(rows: Iterable[ScatteringSweepRow], path: str | Path) -> Path:
+    """Write scattering sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty scattering sweep")
 
 
 def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
@@ -359,6 +446,18 @@ def read_doppler_sweep_csv(path: str | Path) -> list[DopplerSweepRow]:
             values = {key: float(value) for key, value in row.items()}
             values["n_samples"] = int(values["n_samples"])
             rows.append(DopplerSweepRow(**values))
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
+
+
+def read_scattering_sweep_csv(path: str | Path) -> list[ScatteringSweepRow]:
+    """Read scattering sweep rows from a CSV produced by :func:`write_scattering_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = [ScatteringSweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
     if not rows:
         raise ValueError(f"no rows found in {input_path}")
     return rows
