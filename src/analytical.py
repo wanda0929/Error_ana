@@ -9,6 +9,7 @@ import numpy as np
 from .params import BOLTZMANN_J_PER_K
 
 DOPPLER_PROTOCOL_COEFFICIENT = math.pi**2 / 4.0
+AMPLITUDE_PROTOCOL_SENSITIVITY = math.pi**2 / 2.0
 
 
 def _check_positive_finite(name: str, value: float) -> float:
@@ -93,6 +94,23 @@ def epsilon_doppler(
     omega = _check_positive_finite("omega", omega)
     velocity_variance = BOLTZMANN_J_PER_K * temperature / mass
     return DOPPLER_PROTOCOL_COEFFICIENT * k_eff_angular**2 * velocity_variance / omega**2
+
+
+def epsilon_amplitude(sigma_omega: float, sensitivity: float | None = None) -> float:
+    """Leading amplitude-noise infidelity ``S_Ω σ_Ω²``.
+
+    ``sigma_omega`` is the fractional shot-to-shot Rabi-frequency noise.  For
+    the standard pi-2pi-pi blockade CZ protocol, the small-noise sensitivity is
+    ``S_Ω = pi²/2``: the ``|01>`` and ``|10>`` branches each get a pulse-area
+    error at second order, while the blocked ``|11>`` branch starts at fourth
+    order.
+    """
+
+    sigma_omega = _check_nonnegative_finite("sigma_omega", sigma_omega)
+    if sensitivity is None:
+        sensitivity = AMPLITUDE_PROTOCOL_SENSITIVITY
+    sensitivity = _check_positive_finite("sensitivity", sensitivity)
+    return sensitivity * sigma_omega**2
 
 
 def epsilon_scattering(

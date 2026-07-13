@@ -11,13 +11,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.analytical import epsilon_blockade, epsilon_decay, epsilon_doppler, epsilon_scattering
+from src.analytical import epsilon_amplitude, epsilon_blockade, epsilon_decay, epsilon_doppler, epsilon_scattering
+from src.errors.amplitude import DEFAULT_SIGMA_OMEGA
 from src.params import DEFAULT_TEMPERATURE_K, K_EFF_RAD_PER_UM, RB87_MASS_KG, get_rydberg_params
 from src.sweeps import (
+    sweep_amplitude,
     sweep_blockade,
     sweep_decay,
     sweep_doppler,
     sweep_scattering,
+    write_amplitude_sweep_csv,
     write_blockade_sweep_csv,
     write_decay_sweep_csv,
     write_doppler_sweep_csv,
@@ -29,6 +32,7 @@ DECAY_SWEEP_CSV = ROOT / "figures" / "decay_sweep.csv"
 BLOCKADE_SWEEP_CSV = ROOT / "figures" / "blockade_sweep.csv"
 DOPPLER_SWEEP_CSV = ROOT / "figures" / "doppler_sweep.csv"
 SCATTERING_SWEEP_CSV = ROOT / "figures" / "scattering_sweep.csv"
+AMPLITUDE_SWEEP_CSV = ROOT / "figures" / "amplitude_sweep.csv"
 BASELINE_INTERMEDIATE_DETUNING_MHZ = 1000.0
 
 
@@ -56,6 +60,10 @@ def main() -> None:
     scattering_path = write_scattering_sweep_csv(scattering_rows, SCATTERING_SWEEP_CSV)
     baseline_delta_p = 2.0 * math.pi * BASELINE_INTERMEDIATE_DETUNING_MHZ
     baseline_scattering_error = epsilon_scattering(params.intermediate_decay_rate_per_us, baseline_delta_p)
+
+    amplitude_rows = sweep_amplitude(num_points=25, n_samples=500)
+    amplitude_path = write_amplitude_sweep_csv(amplitude_rows, AMPLITUDE_SWEEP_CSV)
+    baseline_amplitude_error = epsilon_amplitude(DEFAULT_SIGMA_OMEGA)
 
     print(params.summary())
     print(f"Decay sweep points: {len(decay_rows)}")
@@ -96,6 +104,16 @@ def main() -> None:
     print(f"Baseline intermediate detuning: {BASELINE_INTERMEDIATE_DETUNING_MHZ / 1000.0:.1f} GHz")
     print(f"Baseline analytical scattering error: {baseline_scattering_error:.4e}")
     print(f"Saved {scattering_path.relative_to(ROOT)}")
+
+    print(f"Amplitude-noise sweep points: {len(amplitude_rows)}")
+    print(
+        "Fractional Rabi-noise range: "
+        f"{amplitude_rows[0].sigma_percent:.3g}% to {amplitude_rows[-1].sigma_percent:.3g}% "
+        f"with N={amplitude_rows[0].n_samples} shots/point"
+    )
+    print(f"Evered-like fractional Rabi noise: {DEFAULT_SIGMA_OMEGA * 100.0:.1f}%")
+    print(f"Baseline analytical amplitude-noise error: {baseline_amplitude_error:.4e}")
+    print(f"Saved {amplitude_path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
