@@ -67,3 +67,27 @@ def epsilon_blockade(omega: float, blockade_shift: float) -> float:
     omega = _check_positive_finite("omega", omega)
     blockade_shift = _check_positive_finite("blockade_shift", blockade_shift)
     return omega**2 / (8.0 * blockade_shift**2)
+
+
+def epsilon_scattering(
+    gamma_e: float,
+    delta_p: float,
+    omega1_over_omega2: float = 1.0,
+) -> float:
+    """Leading intermediate-state-scattering infidelity.
+
+    ``gamma_e`` is the intermediate-state decay rate and ``delta_p`` is the
+    one-photon detuning.  They must use the same angular-frequency units; in this
+    repository both are normally rad/us.  ``omega1_over_omega2`` is the lower-leg
+    to upper-leg single-photon Rabi-frequency ratio ``q``.
+
+    The perturbative CZ estimate is
+
+    ``(7*pi/8) * (gamma_e/delta_p) * (q + 1/q)/2``.
+    """
+
+    gamma_e = _check_nonnegative_finite("gamma_e", gamma_e)
+    delta_p = _check_positive_finite("delta_p", delta_p)
+    omega1_over_omega2 = _check_positive_finite("omega1_over_omega2", omega1_over_omega2)
+    beam_imbalance = 0.5 * (omega1_over_omega2 + 1.0 / omega1_over_omega2)
+    return (7.0 * math.pi / 8.0) * (gamma_e / delta_p) * beam_imbalance
