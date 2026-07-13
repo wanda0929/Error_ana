@@ -16,19 +16,24 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.analytical import epsilon_blockade, epsilon_scattering
+from src.analytical import epsilon_amplitude, epsilon_blockade, epsilon_scattering
+from src.errors.amplitude import DEFAULT_SIGMA_OMEGA
 from src.params import DEFAULT_TEMPERATURE_K, get_rydberg_params
 from src.sweeps import (
+    amplitude_sigma_grid,
     blockade_ratios,
+    read_amplitude_sweep_csv,
     read_blockade_sweep_csv,
     read_decay_sweep_csv,
     read_doppler_sweep_csv,
     read_scattering_sweep_csv,
     scattering_detunings_mhz,
+    sweep_amplitude,
     sweep_blockade,
     sweep_decay,
     sweep_doppler,
     sweep_scattering,
+    write_amplitude_sweep_csv,
     write_blockade_sweep_csv,
     write_decay_sweep_csv,
     write_doppler_sweep_csv,
@@ -40,10 +45,12 @@ DECAY_SWEEP_CSV = ROOT / "figures" / "decay_sweep.csv"
 BLOCKADE_SWEEP_CSV = ROOT / "figures" / "blockade_sweep.csv"
 DOPPLER_SWEEP_CSV = ROOT / "figures" / "doppler_sweep.csv"
 SCATTERING_SWEEP_CSV = ROOT / "figures" / "scattering_sweep.csv"
+AMPLITUDE_SWEEP_CSV = ROOT / "figures" / "amplitude_sweep.csv"
 DECAY_FIGURE = ROOT / "figures" / "fidelity_vs_decay_rate.png"
 BLOCKADE_FIGURE = ROOT / "figures" / "fidelity_vs_blockade.png"
 DOPPLER_FIGURE = ROOT / "figures" / "fidelity_vs_temperature.png"
 SCATTERING_FIGURE = ROOT / "figures" / "fidelity_vs_detuning.png"
+AMPLITUDE_FIGURE = ROOT / "figures" / "fidelity_vs_amplitude_noise.png"
 BASELINE_INTERMEDIATE_DETUNING_MHZ = 1000.0
 
 
@@ -76,6 +83,14 @@ def _load_or_create_scattering_rows():
         return read_scattering_sweep_csv(SCATTERING_SWEEP_CSV)
     rows = sweep_scattering(num_points=25)
     write_scattering_sweep_csv(rows, SCATTERING_SWEEP_CSV)
+    return rows
+
+
+def _load_or_create_amplitude_rows():
+    if AMPLITUDE_SWEEP_CSV.exists():
+        return read_amplitude_sweep_csv(AMPLITUDE_SWEEP_CSV)
+    rows = sweep_amplitude(num_points=25, n_samples=500)
+    write_amplitude_sweep_csv(rows, AMPLITUDE_SWEEP_CSV)
     return rows
 
 
@@ -372,8 +387,98 @@ def plot_scattering_sweep(output_path: Path = SCATTERING_FIGURE) -> Path:
     return output_path
 
 
+def plot_amplitude_sweep(output_path: Path = AMPLITUDE_FIGURE) -> Path:
+    """Plot numerical and analytical infidelity versus Rabi-amplitude noise."""
+
+    rows = _load_or_create_amplitude_rows()
+    sigma_percent = np.array([row.sigma_percent for row in rows], dtype=float)
+    sigma = sigma_percent / 100.0
+    numerical = np.array([row.numerical_error for row in rows], dtype=float)
+    numerical_se = np.array([row.numerical_standard_error for row in rows], dtype=float)
+
+    if sigma.size < 2:
+        sigma = amplitude_sigma_grid(num_points=25)
+        rows = sweep_amplitude(sigmas=sigma, n_samples=500)
+        write_amplitude_sweep_csv(rows, AMPLITUDE_SWEEP_CSV)
+        sigma_percent = np.array([row.sigma_percent for row in rows], dtype=float)
+        sigma = sigma_percent / 100.0
+        numerical = np.array([row.numerical_error for row in rows], dtype=float)
+        numerical_se = np.array([row.numerical_standard_error for row in rows], dtype=float)
+
+    sigma_curve = np.geomspace(sigma.min(), sigma.max(), 400)
+    analytical_curve = np.array([epsilon_amplitude(value) for value in sigma_curve], dtype=float)
+    baseline_error = epsilon_amplitude(DEFAULT_SIGMA_OMEGA)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(7.0, 4.3), constrained_layout=True)
+    ax.plot(
+        sigma_curve * 100.0,
+        analytical_curve,
+        color="#5e81ac",
+        lw=2.4,
+        label=r"Analytical $(\pi^2/2)\sigma_\Omega^2$",
+    )
+    ax.errorbar(
+        sigma_percent,
+        numerical,
+        yerr=numerical_se,
+        fmt="o",
+        ms=5.2,
+        color="#bf616a",
+        ecolor="#d08770",
+        elinewidth=1.0,
+        capsize=2.5,
+        markeredgecolor="white",
+        markeredgewidth=0.7,
+        zorder=3,
+        label="Monte Carlo coherent simulation",
+    )
+    ax.axvline(
+        DEFAULT_SIGMA_OMEGA * 100.0,
+        color="#a3be8c",
+        lw=1.6,
+        ls="--",
+        label=fr"Evered-like $\sigma_\Omega={DEFAULT_SIGMA_OMEGA * 100.0:.0f}\%$",
+    )
+    ax.scatter(
+        [DEFAULT_SIGMA_OMEGA * 100.0],
+        [baseline_error],
+        marker="*",
+        s=145,
+        color="#ebcb8b",
+        edgecolor="#2e3440",
+        zorder=4,
+    )
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_title("Rabi-amplitude noise in the Rydberg CZ gate")
+    ax.set_xlabel(r"Fractional Rabi noise $\sigma_\Omega$ (%)")
+    ax.set_ylabel(r"CZ infidelity $1-F_{\mathrm{avg}}$")
+    ax.grid(True, which="both", alpha=0.22)
+    ax.set_xlim(sigma_percent.min() * 0.92, sigma_percent.max() * 1.08)
+    ax.legend(frameon=False, loc="upper left")
+    ax.text(
+        0.04,
+        0.06,
+        "pulse-area errors grow quadratically with intensity noise",
+        transform=ax.transAxes,
+        color="#4c566a",
+        fontsize=10,
+    )
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+    return output_path
+
+
 def main() -> None:
-    outputs = [plot_decay_sweep(), plot_blockade_sweep(), plot_doppler_sweep(), plot_scattering_sweep()]
+    outputs = [
+        plot_decay_sweep(),
+        plot_blockade_sweep(),
+        plot_doppler_sweep(),
+        plot_scattering_sweep(),
+        plot_amplitude_sweep(),
+    ]
     for output_path in outputs:
         print(f"Saved {output_path.relative_to(ROOT)}")
 

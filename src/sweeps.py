@@ -9,7 +9,14 @@ from typing import Iterable
 
 import numpy as np
 
-from .analytical import epsilon_blockade, epsilon_decay_from_gamma, epsilon_doppler, epsilon_scattering
+from .analytical import (
+    epsilon_amplitude,
+    epsilon_blockade,
+    epsilon_decay_from_gamma,
+    epsilon_doppler,
+    epsilon_scattering,
+)
+from .errors.amplitude import run_amplitude_noise_gate
 from .errors.blockade import run_blockade_gate
 from .errors.decay import run_decay_gate
 from .errors.doppler import run_doppler_gate_mc
@@ -71,6 +78,21 @@ class ScatteringSweepRow:
     numerical_error: float
     analytical_error: float
     analytical_fidelity: float
+
+
+@dataclass(frozen=True)
+class AmplitudeSweepRow:
+    """One row of the isolated Rabi-amplitude-noise sweep."""
+
+    sigma_omega: float
+    sigma_percent: float
+    numerical_fidelity: float
+    numerical_error: float
+    numerical_std: float
+    numerical_standard_error: float
+    analytical_error: float
+    analytical_fidelity: float
+    n_samples: int
 
 
 def _check_positive_finite(name: str, value: float) -> float:
@@ -141,6 +163,22 @@ def doppler_temperature_grid(
     if max_temperature_K <= min_temperature_K:
         raise ValueError("max_temperature_K must be greater than min_temperature_K")
     return np.logspace(np.log10(min_temperature_K), np.log10(max_temperature_K), num_points)
+
+
+def amplitude_sigma_grid(
+    *,
+    num_points: int = 25,
+    min_sigma: float = 0.001,
+    max_sigma: float = 0.20,
+) -> np.ndarray:
+    """Return log-spaced fractional Rabi-noise values for amplitude sweeps."""
+
+    num_points = _check_num_points(num_points)
+    min_sigma = _check_positive_finite("min_sigma", min_sigma)
+    max_sigma = _check_positive_finite("max_sigma", max_sigma)
+    if max_sigma <= min_sigma:
+        raise ValueError("max_sigma must be greater than min_sigma")
+    return np.geomspace(min_sigma, max_sigma, num_points)
 
 
 def scattering_detunings_mhz(
@@ -371,6 +409,62 @@ def sweep_scattering(
     return rows
 
 
+def sweep_amplitude(
+    *,
+    omega: float = DEFAULT_OMEGA_RAD_PER_US,
+    sigmas: Iterable[float] | None = None,
+    num_points: int = 25,
+    min_sigma: float = 0.001,
+    max_sigma: float = 0.20,
+    n_samples: int = 500,
+    seed: int | None = 5678,
+) -> list[AmplitudeSweepRow]:
+    """Sweep fractional Rabi-amplitude noise and compare MC with the formula."""
+
+    omega = _check_positive_finite("omega", omega)
+    if not isinstance(n_samples, int) or n_samples < 1:
+        raise ValueError("n_samples must be an integer >= 1")
+
+    if sigmas is None:
+        sigma_values = amplitude_sigma_grid(
+            num_points=num_points,
+            min_sigma=min_sigma,
+            max_sigma=max_sigma,
+        )
+    else:
+        sigma_values = np.asarray(list(sigmas), dtype=float)
+        if sigma_values.ndim != 1 or sigma_values.size < 2:
+            raise ValueError("sigmas must contain at least two points")
+    if np.any(~np.isfinite(sigma_values)) or np.any(sigma_values < 0.0):
+        raise ValueError("all sigma values must be non-negative and finite")
+
+    rows: list[AmplitudeSweepRow] = []
+    for index, sigma in enumerate(sigma_values):
+        sigma = _check_nonnegative_finite("sigma_omega", float(sigma))
+        row_seed = None if seed is None else int(seed) + index
+        result = run_amplitude_noise_gate(
+            omega=omega,
+            sigma_omega=sigma,
+            n_samples=n_samples,
+            seed=row_seed,
+        )
+        analytical_error = epsilon_amplitude(sigma)
+        rows.append(
+            AmplitudeSweepRow(
+                sigma_omega=sigma,
+                sigma_percent=100.0 * sigma,
+                numerical_fidelity=result.average_fidelity,
+                numerical_error=1.0 - result.average_fidelity,
+                numerical_std=result.std_fidelity,
+                numerical_standard_error=result.standard_error,
+                analytical_error=analytical_error,
+                analytical_fidelity=1.0 - analytical_error,
+                n_samples=result.n_samples,
+            )
+        )
+    return rows
+
+
 def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_message: str) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -380,7 +474,7 @@ def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_mess
 
     fieldnames = list(asdict(rows[0]).keys())
     with output_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow(asdict(row))
@@ -409,6 +503,12 @@ def write_scattering_sweep_csv(rows: Iterable[ScatteringSweepRow], path: str | P
     """Write scattering sweep rows to CSV and return the path."""
 
     return _write_dataclass_csv(rows, path, empty_message="cannot write an empty scattering sweep")
+
+
+def write_amplitude_sweep_csv(rows: Iterable[AmplitudeSweepRow], path: str | Path) -> Path:
+    """Write amplitude-noise sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty amplitude sweep")
 
 
 def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
@@ -458,6 +558,22 @@ def read_scattering_sweep_csv(path: str | Path) -> list[ScatteringSweepRow]:
     with input_path.open("r", newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         rows = [ScatteringSweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
+
+
+def read_amplitude_sweep_csv(path: str | Path) -> list[AmplitudeSweepRow]:
+    """Read amplitude sweep rows from a CSV produced by :func:`write_amplitude_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = []
+        for row in reader:
+            values = {key: float(value) for key, value in row.items()}
+            values["n_samples"] = int(values["n_samples"])
+            rows.append(AmplitudeSweepRow(**values))
     if not rows:
         raise ValueError(f"no rows found in {input_path}")
     return rows

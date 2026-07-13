@@ -683,6 +683,7 @@
         <a class="button" href="#sec-error-blockade">Blockade</a>
         <a class="button" href="#sec-error-doppler">Doppler</a>
         <a class="button" href="#sec-error-scattering">Scattering</a>
+        <a class="button" href="#sec-error-amplitude">Amplitude</a>
         <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
         <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
       </div>
@@ -1217,6 +1218,65 @@
       <div id="comments-sec-error-scattering" class="comments no-print"></div>
     </section>
 
+    <section id="sec-error-amplitude" data-section="Error: Amplitude Noise" class="error-section">
+      <div class="section-heading">
+        <span class="section-number">07</span>
+        <h2>Amplitude Noise</h2>
+      </div>
+
+      <div class="callout">Laser intensity noise changes the Rabi frequency from shot to shot, so a pulse calibrated as π or 2π has the wrong area in that experimental run.</div>
+
+      <p class="lead">The Rabi frequency $\Omega$ is proportional to the optical field amplitude. If the laser power fluctuates between shots, the whole pulse sequence sees $\Omega'=\Omega(1+\varepsilon)$ while the pulse durations remain calibrated to the nominal $\Omega$. The error is coherent within one shot, then becomes a random-unitary channel after averaging many shots.</p>
+
+      <p>We model the fractional error as $\varepsilon\sim\mathcal{N}(0,\sigma_\Omega^2)$ and use the same sampled $\varepsilon$ for all three pulses in that shot. That represents global laser-intensity drift, not independent pulse-to-pulse jitter.</p>
+
+      <div class="math-box">
+        $$\epsilon_{\mathrm{amp}} \simeq S_\Omega\sigma_\Omega^2, \qquad S_\Omega=\frac{\pi^2}{2},$$
+        $$\epsilon_{\mathrm{amp}} \simeq \frac{\pi^2}{2}\sigma_\Omega^2.$$
+      </div>
+
+      <details>
+        <summary>Derivation sketch</summary>
+        <div class="details-body">
+          <p>For the $|01\rangle$ and $|10\rangle$ branches, the final computational amplitude is $-\cos(\pi\varepsilon)$ instead of $-1$. After the fixed local-$Z$ correction, the relevant diagonal entries are therefore $\cos(\pi\varepsilon)$, so the leading loss is quadratic in the pulse-area error.</p>
+          <div class="math-box">
+            $$M \approx \mathrm{diag}\left(1,\cos(\pi\varepsilon),\cos(\pi\varepsilon),1\right),$$
+            $$F_{\mathrm{avg}} \approx 1-\frac{\pi^2}{2}\varepsilon^2.$$
+          </div>
+          <p>The $|11\rangle$ branch is blockaded during the middle pulse and is insensitive to amplitude noise through second order; its first correction is fourth order. Averaging over the Gaussian gives $\langle\varepsilon^2\rangle=\sigma_\Omega^2$, hence $\epsilon_{\mathrm{amp}}=(\pi^2/2)\sigma_\Omega^2$.</p>
+        </div>
+      </details>
+
+      <figure class="figure-card" aria-labelledby="amplitude-figure-title">
+        <h3 id="amplitude-figure-title">Infidelity versus Rabi-amplitude noise</h3>
+        <img src="../figures/fidelity_vs_amplitude_noise.png" alt="Rabi-amplitude-noise CZ infidelity versus fractional Rabi noise, with Monte Carlo points, analytical curve, and Evered operating point." onerror="showAmplitudeFallback(this)">
+        <div id="amplitude-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/fidelity_vs_amplitude_noise.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the amplitude-noise Monte Carlo sweep and figure.</p>
+        </div>
+        <figcaption>Numerical points average coherent QuTiP shots with $\Omega'=\Omega(1+\varepsilon)$ and fixed nominal pulse durations. Error bars show Monte Carlo standard error. The analytical curve is $(\pi^2/2)\sigma_\Omega^2$, and the dashed reference marks $\sigma_\Omega=2\%$.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag accent">Scaling</span>
+          <h3>$\epsilon_{\mathrm{amp}}\propto\sigma_\Omega^2$</h3>
+          <p>Halving fractional Rabi noise suppresses this error by a factor of four.</p>
+        </div>
+        <div class="card">
+          <span class="tag ground">Baseline</span>
+          <h3>$\epsilon_{\mathrm{amp}}\approx2.0\times10^{-3}$</h3>
+          <p>At $\sigma_\Omega=2\%$, the simple π–2π–π protocol pays about 0.2% infidelity from pulse-area noise alone.</p>
+        </div>
+        <div class="card highlight">
+          <span class="tag blockade">Takeaway</span>
+          <p><strong>This error dominates when</strong> laser intensity is not stabilized or the protocol lacks composite-pulse protection; it is small below 1% noise but quickly becomes visible.</p>
+        </div>
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-error-amplitude', 'Amplitude Noise')">💬 Ask about this section</button>
+      <div id="comments-sec-error-amplitude" class="comments no-print"></div>
+    </section>
+
     <!--
       ERROR-SOURCE SECTION TEMPLATE FOR ISSUES #3-#7
 
@@ -1256,7 +1316,7 @@
     -->
 
     <footer class="footer">
-      <p>This page now covers the introduction, ideal-gate baseline, and four error slices: Rydberg decay, finite blockade, Doppler dephasing, and intermediate-state scattering. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
+      <p>This page now covers the introduction, ideal-gate baseline, and five error slices: Rydberg decay, finite blockade, Doppler dephasing, intermediate-state scattering, and amplitude noise. The combined budget and summary table are intentionally left to later issue slices.</p>
       <div class="topbar-actions no-print">
         <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
         <button class="button" type="button" onclick="window.print()">Save as PDF</button>
@@ -1265,7 +1325,7 @@
   </div>
 
   <script>
-    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, and Scattering';
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, Doppler, Scattering, and Amplitude Noise';
     const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
     let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
 
@@ -1296,6 +1356,12 @@
     function showScatteringFallback(img) {
       img.hidden = true;
       const fallback = document.getElementById('scattering-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showAmplitudeFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('amplitude-fallback');
       if (fallback) fallback.hidden = false;
     }
 

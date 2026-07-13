@@ -1,5 +1,7 @@
 ARC-Alkali-Rydberg-Calculator==3.9.0
 qutip==5.0.4
+# QuTiP 5.0.4 imports scipy.special.sph_harm, removed in SciPy 1.17+.
+scipy<1.17
 numpy>=1.23
 matplotlib>=3.7
 pytest>=7
