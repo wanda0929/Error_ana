@@ -46,9 +46,18 @@ def test_html_interactive_and_downstream_template_scaffold():
     assert 'id="comment-modal"' in html
     assert 'id="notes-panel"' in html
     assert "Copy as LLM prompt" in html
-    assert html.count("<details>") >= 3
+    assert html.count("<details>") >= 4
     assert "ERROR-SOURCE SECTION TEMPLATE FOR ISSUES #3-#7" in html
     assert 'id="sec-error-{name}"' in html
+
+
+def test_html_has_finite_blockade_section():
+    html = _html()
+    assert 'id="sec-error-blockade"' in html
+    assert "Finite blockade" in html
+    assert "\\epsilon_{\\mathrm{block}}" in html
+    assert "../figures/fidelity_vs_blockade.png" in html
+    assert "U/\\Omega" in html
 
 
 def test_svg_fallbacks_do_not_contain_raw_mathjax_delimiters():

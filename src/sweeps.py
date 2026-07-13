@@ -9,15 +9,12 @@ from typing import Iterable
 
 import numpy as np
 
-from .analytical import epsilon_decay_from_gamma, epsilon_doppler
+from .analytical import epsilon_blockade, epsilon_decay_from_gamma, epsilon_doppler
+from .errors.blockade import run_blockade_gate
 from .errors.decay import run_decay_gate
 from .errors.doppler import run_doppler_gate_mc
-from .params import (
-    DEFAULT_OMEGA_RAD_PER_US,
-    K_EFF_RAD_PER_UM,
-    RB87_MASS_KG,
-    get_rydberg_params,
-)
+from .fidelity import CZ_TARGET, pedersen_fidelity
+from .params import DEFAULT_OMEGA_RAD_PER_US, K_EFF_RAD_PER_UM, RB87_MASS_KG, get_rydberg_params
 
 
 @dataclass(frozen=True)
@@ -30,6 +27,21 @@ class DecaySweepRow:
     numerical_error: float
     analytical_error: float
     analytical_fidelity: float
+
+
+@dataclass(frozen=True)
+class BlockadeSweepRow:
+    """One row of the isolated finite-blockade sweep."""
+
+    blockade_to_rabi: float
+    blockade_shift: float
+    numerical_fidelity: float
+    numerical_error: float
+    analytical_error: float
+    analytical_fidelity: float
+    rr_leakage: float
+    total_leakage: float
+    max_rr_population: float
 
 
 @dataclass(frozen=True)
@@ -90,6 +102,17 @@ def decay_gamma_grid(
     )
 
 
+def blockade_ratios(num: int = 30, minimum: float = 5.0, maximum: float = 500.0) -> np.ndarray:
+    """Return log-spaced blockade ratios ``U/Ω`` for the standard sweep."""
+
+    num = _check_num_points(num)
+    minimum = _check_positive_finite("minimum", minimum)
+    maximum = _check_positive_finite("maximum", maximum)
+    if maximum <= minimum:
+        raise ValueError("maximum must be greater than minimum")
+    return np.geomspace(minimum, maximum, num)
+
+
 def doppler_temperature_grid(
     *,
     min_temperature_K: float = 0.1e-6,
@@ -148,33 +171,62 @@ def sweep_decay(
     return rows
 
 
-def write_decay_sweep_csv(rows: Iterable[DecaySweepRow], path: str | Path) -> Path:
-    """Write decay sweep rows to CSV and return the path."""
+def sweep_blockade(
+    omega: float | None = None,
+    blockade_shifts: Iterable[float] | None = None,
+    *,
+    ratios: Iterable[float] | None = None,
+    n_steps_per_pi: int = 160,
+) -> list[BlockadeSweepRow]:
+    """Sweep finite-blockade strength and compare simulation with the formula.
 
-    output_path = Path(path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    rows = list(rows)
-    if not rows:
-        raise ValueError("cannot write an empty decay sweep")
+    Provide either absolute ``blockade_shifts`` or dimensionless ``ratios``.  If
+    neither is provided, the standard 30-point ``U/Ω`` sweep from 5 to 500 is
+    used.
+    """
 
-    fieldnames = list(asdict(rows[0]).keys())
-    with output_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(asdict(row))
-    return output_path
+    if omega is None:
+        omega = get_rydberg_params().omega_rad_per_us
+    omega = _check_positive_finite("omega", omega)
 
+    if blockade_shifts is not None and ratios is not None:
+        raise ValueError("provide either blockade_shifts or ratios, not both")
+    if ratios is None:
+        if blockade_shifts is None:
+            ratio_values = blockade_ratios()
+            shift_values = omega * ratio_values
+        else:
+            shift_values = np.asarray(list(blockade_shifts), dtype=float)
+            ratio_values = shift_values / omega
+    else:
+        ratio_values = np.asarray(list(ratios), dtype=float)
+        shift_values = omega * ratio_values
 
-def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
-    """Read decay sweep rows from a CSV produced by :func:`write_decay_sweep_csv`."""
+    if shift_values.ndim != 1 or shift_values.size == 0:
+        raise ValueError("sweep requires at least one blockade value")
+    if np.any(~np.isfinite(shift_values)) or np.any(shift_values <= 0):
+        raise ValueError("all blockade shifts must be positive and finite")
+    if np.any(~np.isfinite(ratio_values)) or np.any(ratio_values <= 0):
+        raise ValueError("all blockade ratios must be positive and finite")
 
-    input_path = Path(path)
-    with input_path.open("r", newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        rows = [DecaySweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
-    if not rows:
-        raise ValueError(f"no rows found in {input_path}")
+    rows: list[BlockadeSweepRow] = []
+    for ratio, blockade_shift in zip(ratio_values, shift_values):
+        result = run_blockade_gate(omega, float(blockade_shift), n_steps_per_pi=n_steps_per_pi)
+        fidelity = pedersen_fidelity(result["unitary"], CZ_TARGET, correct_local_z=True)
+        analytical_error = epsilon_blockade(omega, float(blockade_shift))
+        rows.append(
+            BlockadeSweepRow(
+                blockade_to_rabi=float(ratio),
+                blockade_shift=float(blockade_shift),
+                numerical_fidelity=float(fidelity),
+                numerical_error=float(1.0 - fidelity),
+                analytical_error=float(analytical_error),
+                analytical_fidelity=float(1.0 - analytical_error),
+                rr_leakage=float(result["rr_leakage"]),
+                total_leakage=float(result["total_leakage"]),
+                max_rr_population=float(result["max_rr_population"]),
+            )
+        )
     return rows
 
 
@@ -238,14 +290,12 @@ def sweep_doppler(
     return rows
 
 
-def write_doppler_sweep_csv(rows: Iterable[DopplerSweepRow], path: str | Path) -> Path:
-    """Write Doppler sweep rows to CSV and return the path."""
-
+def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_message: str) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rows = list(rows)
     if not rows:
-        raise ValueError("cannot write an empty Doppler sweep")
+        raise ValueError(empty_message)
 
     fieldnames = list(asdict(rows[0]).keys())
     with output_path.open("w", newline="", encoding="utf-8") as handle:
@@ -254,6 +304,48 @@ def write_doppler_sweep_csv(rows: Iterable[DopplerSweepRow], path: str | Path) -
         for row in rows:
             writer.writerow(asdict(row))
     return output_path
+
+
+def write_decay_sweep_csv(rows: Iterable[DecaySweepRow], path: str | Path) -> Path:
+    """Write decay sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty decay sweep")
+
+
+def write_blockade_sweep_csv(rows: Iterable[BlockadeSweepRow], path: str | Path) -> Path:
+    """Write blockade sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty blockade sweep")
+
+
+def write_doppler_sweep_csv(rows: Iterable[DopplerSweepRow], path: str | Path) -> Path:
+    """Write Doppler sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty Doppler sweep")
+
+
+def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
+    """Read decay sweep rows from a CSV produced by :func:`write_decay_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = [DecaySweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
+
+
+def read_blockade_sweep_csv(path: str | Path) -> list[BlockadeSweepRow]:
+    """Read blockade sweep rows from a CSV produced by :func:`write_blockade_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = [BlockadeSweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
 
 
 def read_doppler_sweep_csv(path: str | Path) -> list[DopplerSweepRow]:

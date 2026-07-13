@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, and Rydberg Decay</title>
+  <title>Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Rydberg Decay, and Finite Blockade</title>
   <script>
     window.MathJax = {
       tex: {
@@ -680,6 +680,7 @@
         <a class="button" href="#sec-introduction">Introduction</a>
         <a class="button" href="#sec-ideal-gate">Ideal gate</a>
         <a class="button" href="#sec-error-decay">Decay</a>
+        <a class="button" href="#sec-error-blockade">Blockade</a>
         <a class="button" href="#sec-error-doppler">Doppler</a>
         <button class="button" type="button" onclick="toggleNotes()">📝 Notes</button>
         <button class="button" type="button" onclick="window.print()">🖨️ Print</button>
@@ -1036,9 +1037,72 @@
       <div id="comments-sec-error-decay" class="comments no-print"></div>
     </section>
 
-    <section id="sec-error-doppler" data-section="Error: Doppler Dephasing" class="error-section">
+    <section id="sec-error-blockade" data-section="Error: Finite blockade" class="error-section">
       <div class="section-heading">
         <span class="section-number">04</span>
+        <h2>Finite blockade</h2>
+      </div>
+
+      <div class="callout">The blockade is large, not infinite: the supposedly forbidden $|rr\rangle$ state can be weakly and off-resonantly admixed during the middle pulse.</div>
+
+      <p class="lead">In the ideal story, if atom 1 is already in $|r\rangle$, atom 2 cannot be excited because the doubly excited state $|rr\rangle$ is shifted out of resonance by the interaction energy $U$. Real blockade only detunes that transition. A strong but finite $U$ leaves a small virtual excursion toward $|rr\rangle$ and a small coherent gate error.</p>
+
+      <p>Only the $|11\rangle$ branch sees this channel. The $|00\rangle$ state is dark, $|01\rangle$ is a single-atom $2\pi$ rotation on atom 2, and $|10\rangle$ is a single-atom round trip on atom 1. For $|11\rangle$, however, the middle $2\pi$ pulse tries to drive $|rg\rangle \leftrightarrow |rr\rangle$ while that transition is detuned by $U$.</p>
+
+      <div class="math-box">
+        $$H_{\mathrm{blocked}}=\frac{\Omega}{2}\left(|rg\rangle\langle rr|+|rr\rangle\langle rg|\right)+U|rr\rangle\langle rr|,$$
+        $$\epsilon_{\mathrm{block}} \simeq \frac{\Omega^2}{8U^2}=\frac{1}{8(U/\Omega)^2}.$$
+      </div>
+
+      <details>
+        <summary>Derivation sketch</summary>
+        <div class="details-body">
+          <p>During the blocked middle pulse, the relevant pair of states is $|rg\rangle$ and $|rr\rangle$. A resonant laser aimed at atom 2 is detuned from this transition by $U$, so the generalized Rabi frequency is $\Omega_R=\sqrt{U^2+\Omega^2}$ and the instantaneous double-excitation probability is bounded by</p>
+          <div class="math-box">
+            $$P_{rr}^{\max}=\frac{\Omega^2}{U^2+\Omega^2}\approx \left(\frac{\Omega}{U}\right)^2 \quad (U\gg\Omega).$$
+          </div>
+          <p>The standard blockade error budget averages the fast off-resonant phase and includes the protocol-dependent geometric factor for the $\pi$–$2\pi$–$\pi$ sequence, giving $\epsilon_{\mathrm{block}}\approx P_{rr}^{\max}/8$. That is the curve plotted below.</p>
+        </div>
+      </details>
+
+      <figure class="figure-card" aria-labelledby="blockade-figure-title">
+        <h3 id="blockade-figure-title">Fidelity versus blockade strength</h3>
+        <img src="../figures/fidelity_vs_blockade.png" alt="Finite blockade CZ infidelity versus blockade ratio U over Omega, with numerical points, analytical curve, and baseline operating point." onerror="showBlockadeFallback(this)">
+        <div id="blockade-fallback" hidden>
+          <p class="fallback-note">Generated PNG not found at <code>../figures/fidelity_vs_blockade.png</code>. Run <code>scripts/run_sweeps.py</code> and <code>scripts/generate_figures.py</code> to regenerate the numerical blockade sweep and figure.</p>
+        </div>
+        <figcaption>Numerical QuTiP points use the finite-blockade Hamiltonian with $|rr\rangle$ included. The analytical curve is $1-F_{\mathrm{avg}}=\Omega^2/(8U^2)$, and the dashed reference marks the baseline operating point near $U/\Omega\approx296$.</figcaption>
+      </figure>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag blockade">Scaling</span>
+          <h3>$\epsilon_{\mathrm{block}}\propto(U/\Omega)^{-2}$</h3>
+          <p>Doubling the blockade ratio suppresses this error by a factor of four.</p>
+        </div>
+        <div class="card">
+          <span class="tag accent">Baseline</span>
+          <h3>$\epsilon_{\mathrm{block}}\approx1.4\times10^{-6}$</h3>
+          <p>For the current Rb-87 $70S_{1/2}$ defaults, finite blockade is already small.</p>
+        </div>
+        <div class="card">
+          <span class="tag rydberg">Failure mode</span>
+          <h3>weak $U$ leaks toward $|rr\rangle$</h3>
+          <p>Once $U$ is only a few times larger than $\Omega$, perturbation theory stops being a safe guide.</p>
+        </div>
+      </div>
+
+      <div class="card highlight">
+        <strong>Takeaway:</strong> Finite blockade dominates when the interaction shift $U$ is not much larger than the Rabi frequency $\Omega$; stronger interactions or slower pulses reduce it quadratically.
+      </div>
+
+      <button class="comment-anchor no-print" type="button" onclick="openSectionComment('sec-error-blockade', 'Finite blockade')">💬 Ask about this section</button>
+      <div id="comments-sec-error-blockade" class="comments no-print"></div>
+    </section>
+
+    <section id="sec-error-doppler" data-section="Error: Doppler Dephasing" class="error-section">
+      <div class="section-heading">
+        <span class="section-number">05</span>
         <h2>Doppler Dephasing</h2>
       </div>
 
@@ -1132,7 +1196,7 @@
     -->
 
     <footer class="footer">
-      <p>This page now covers the introduction, ideal-gate baseline, and two error slices: Rydberg decay and Doppler dephasing. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
+      <p>This page now covers the introduction, ideal-gate baseline, and three error slices: Rydberg decay, finite blockade, and Doppler dephasing. The remaining error sources, combined budget, and summary table are intentionally left to later issue slices.</p>
       <div class="topbar-actions no-print">
         <button class="button" type="button" onclick="exportAllNotes()">Export notes</button>
         <button class="button" type="button" onclick="window.print()">Save as PDF</button>
@@ -1141,7 +1205,7 @@
   </div>
 
   <script>
-    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, and Doppler';
+    const PAGE_TITLE = 'Rydberg CZ Gate Error Analysis — Introduction, Ideal Gate, Decay, Blockade, and Doppler';
     const STORAGE_KEY = 'rydberg-cz-error-analysis:v1:comments';
     let currentSelection = { text: '', sectionId: 'sec-introduction', sectionTitle: 'Introduction' };
 
@@ -1154,6 +1218,12 @@
     function showDecayFallback(img) {
       img.hidden = true;
       const fallback = document.getElementById('decay-fallback');
+      if (fallback) fallback.hidden = false;
+    }
+
+    function showBlockadeFallback(img) {
+      img.hidden = true;
+      const fallback = document.getElementById('blockade-fallback');
       if (fallback) fallback.hidden = false;
     }
 
