@@ -9,11 +9,12 @@ from typing import Iterable
 
 import numpy as np
 
-from .analytical import epsilon_blockade, epsilon_decay_from_gamma
+from .analytical import epsilon_blockade, epsilon_decay_from_gamma, epsilon_doppler
 from .errors.blockade import run_blockade_gate
 from .errors.decay import run_decay_gate
+from .errors.doppler import run_doppler_gate_mc
 from .fidelity import CZ_TARGET, pedersen_fidelity
-from .params import get_rydberg_params
+from .params import DEFAULT_OMEGA_RAD_PER_US, K_EFF_RAD_PER_UM, RB87_MASS_KG, get_rydberg_params
 
 
 @dataclass(frozen=True)
@@ -43,10 +44,32 @@ class BlockadeSweepRow:
     max_rr_population: float
 
 
+@dataclass(frozen=True)
+class DopplerSweepRow:
+    """One row of the isolated Doppler-temperature sweep."""
+
+    temperature_K: float
+    temperature_uK: float
+    numerical_fidelity: float
+    numerical_error: float
+    numerical_std: float
+    numerical_standard_error: float
+    analytical_error: float
+    analytical_fidelity: float
+    n_samples: int
+
+
 def _check_positive_finite(name: str, value: float) -> float:
     value = float(value)
     if not np.isfinite(value) or value <= 0.0:
         raise ValueError(f"{name} must be positive and finite, got {value!r}")
+    return value
+
+
+def _check_nonnegative_finite(name: str, value: float) -> float:
+    value = float(value)
+    if not np.isfinite(value) or value < 0.0:
+        raise ValueError(f"{name} must be non-negative and finite, got {value!r}")
     return value
 
 
@@ -88,6 +111,22 @@ def blockade_ratios(num: int = 30, minimum: float = 5.0, maximum: float = 500.0)
     if maximum <= minimum:
         raise ValueError("maximum must be greater than minimum")
     return np.geomspace(minimum, maximum, num)
+
+
+def doppler_temperature_grid(
+    *,
+    min_temperature_K: float = 0.1e-6,
+    max_temperature_K: float = 100.0e-6,
+    num_points: int = 25,
+) -> np.ndarray:
+    """Return a logarithmic temperature grid for Doppler sweeps."""
+
+    min_temperature_K = _check_positive_finite("min_temperature_K", min_temperature_K)
+    max_temperature_K = _check_positive_finite("max_temperature_K", max_temperature_K)
+    num_points = _check_num_points(num_points)
+    if max_temperature_K <= min_temperature_K:
+        raise ValueError("max_temperature_K must be greater than min_temperature_K")
+    return np.logspace(np.log10(min_temperature_K), np.log10(max_temperature_K), num_points)
 
 
 def sweep_decay(
@@ -191,6 +230,66 @@ def sweep_blockade(
     return rows
 
 
+def sweep_doppler(
+    *,
+    omega: float = DEFAULT_OMEGA_RAD_PER_US,
+    k_eff_rad_per_um: float = K_EFF_RAD_PER_UM,
+    mass_kg: float = RB87_MASS_KG,
+    temperatures_K: Iterable[float] | None = None,
+    num_points: int = 25,
+    min_temperature_K: float = 0.1e-6,
+    max_temperature_K: float = 100.0e-6,
+    n_samples: int = 500,
+    seed: int | None = 1234,
+) -> list[DopplerSweepRow]:
+    """Sweep atom temperature and compare Doppler MC with the formula."""
+
+    omega = _check_positive_finite("omega", omega)
+    k_eff_rad_per_um = _check_nonnegative_finite("k_eff_rad_per_um", k_eff_rad_per_um)
+    mass_kg = _check_positive_finite("mass_kg", mass_kg)
+    if not isinstance(n_samples, int) or n_samples < 1:
+        raise ValueError("n_samples must be an integer >= 1")
+
+    if temperatures_K is None:
+        temperature_values = doppler_temperature_grid(
+            min_temperature_K=min_temperature_K,
+            max_temperature_K=max_temperature_K,
+            num_points=num_points,
+        )
+    else:
+        temperature_values = np.array(list(temperatures_K), dtype=float)
+        if temperature_values.size < 2:
+            raise ValueError("temperatures_K must contain at least two points")
+
+    rows: list[DopplerSweepRow] = []
+    for index, temperature in enumerate(temperature_values):
+        temperature = _check_nonnegative_finite("temperature", float(temperature))
+        row_seed = None if seed is None else int(seed) + index
+        result = run_doppler_gate_mc(
+            omega=omega,
+            k_eff_rad_per_um=k_eff_rad_per_um,
+            temperature_K=temperature,
+            mass_kg=mass_kg,
+            n_samples=n_samples,
+            seed=row_seed,
+        )
+        analytical_error = epsilon_doppler(k_eff_rad_per_um, temperature, mass_kg, omega)
+        rows.append(
+            DopplerSweepRow(
+                temperature_K=temperature,
+                temperature_uK=temperature * 1e6,
+                numerical_fidelity=result.average_fidelity,
+                numerical_error=1.0 - result.average_fidelity,
+                numerical_std=result.std_fidelity,
+                numerical_standard_error=result.standard_error,
+                analytical_error=analytical_error,
+                analytical_fidelity=1.0 - analytical_error,
+                n_samples=result.n_samples,
+            )
+        )
+    return rows
+
+
 def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_message: str) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -219,6 +318,12 @@ def write_blockade_sweep_csv(rows: Iterable[BlockadeSweepRow], path: str | Path)
     return _write_dataclass_csv(rows, path, empty_message="cannot write an empty blockade sweep")
 
 
+def write_doppler_sweep_csv(rows: Iterable[DopplerSweepRow], path: str | Path) -> Path:
+    """Write Doppler sweep rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty Doppler sweep")
+
+
 def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
     """Read decay sweep rows from a CSV produced by :func:`write_decay_sweep_csv`."""
 
@@ -238,6 +343,22 @@ def read_blockade_sweep_csv(path: str | Path) -> list[BlockadeSweepRow]:
     with input_path.open("r", newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         rows = [BlockadeSweepRow(**{key: float(value) for key, value in row.items()}) for row in reader]
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
+
+
+def read_doppler_sweep_csv(path: str | Path) -> list[DopplerSweepRow]:
+    """Read Doppler sweep rows from a CSV produced by :func:`write_doppler_sweep_csv`."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = []
+        for row in reader:
+            values = {key: float(value) for key, value in row.items()}
+            values["n_samples"] = int(values["n_samples"])
+            rows.append(DopplerSweepRow(**values))
     if not rows:
         raise ValueError(f"no rows found in {input_path}")
     return rows

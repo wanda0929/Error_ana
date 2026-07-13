@@ -29,6 +29,18 @@ DEFAULT_OMEGA_RAD_PER_US = 2.0 * math.pi * DEFAULT_OMEGA_MHZ
 # 3 um gives U/Omega ~= 300 for n=70; 6 um would not be strong blockade.
 DEFAULT_DISTANCE_UM = 3.0
 
+# Thermal/Doppler constants for the 780 nm + 480 nm two-photon Rb excitation.
+BOLTZMANN_J_PER_K = 1.380649e-23
+ATOMIC_MASS_UNIT_KG = 1.66053906660e-27
+RB87_MASS_KG = 87.0 * ATOMIC_MASS_UNIT_KG
+LAMBDA_LOWER_NM = 780.0
+LAMBDA_UPPER_NM = 480.0
+LAMBDA_LOWER_UM = LAMBDA_LOWER_NM * 1e-3
+LAMBDA_UPPER_UM = LAMBDA_UPPER_NM * 1e-3
+K_EFF_CYCLES_PER_UM = abs(1.0 / LAMBDA_LOWER_UM - 1.0 / LAMBDA_UPPER_UM)
+K_EFF_RAD_PER_UM = 2.0 * math.pi * K_EFF_CYCLES_PER_UM
+DEFAULT_TEMPERATURE_K = 10e-6
+
 # ARC perturbative C6 calculation controls.
 DEFAULT_C6_THETA = 0.0
 DEFAULT_C6_PHI = 0.0
@@ -76,6 +88,26 @@ class RydbergParams:
             f"C6={self.c6_ghz_um6:.1f} GHz um^6, R={self.distance_um:g} um, "
             f"U/Ω={self.blockade_to_rabi:.1f}"
         )
+
+
+def thermal_velocity_rms_um_per_us(
+    temperature_K: float,
+    mass_kg: float = RB87_MASS_KG,
+) -> float:
+    """Return the 1D thermal velocity RMS in um/us.
+
+    Numerically, ``1 m/s == 1 um/us``, so the Maxwell-Boltzmann value
+    ``sqrt(k_B T / m)`` needs no scale factor before it is multiplied by a
+    wavevector in rad/um to produce a detuning in rad/us.
+    """
+
+    temperature_K = float(temperature_K)
+    mass_kg = float(mass_kg)
+    if not np.isfinite(temperature_K) or temperature_K < 0.0:
+        raise ValueError(f"temperature_K must be non-negative and finite, got {temperature_K!r}")
+    if not np.isfinite(mass_kg) or mass_kg <= 0.0:
+        raise ValueError(f"mass_kg must be positive and finite, got {mass_kg!r}")
+    return math.sqrt(BOLTZMANN_J_PER_K * temperature_K / mass_kg)
 
 
 def _validate_quantum_numbers(n: int, l: int, j: float, mj: float) -> None:
