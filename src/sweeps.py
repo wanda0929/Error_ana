@@ -18,6 +18,7 @@ from .analytical import (
 )
 from .errors.amplitude import run_amplitude_noise_gate
 from .errors.blockade import run_blockade_gate
+from .errors.combined import evaluate_error_budget
 from .errors.decay import run_decay_gate
 from .errors.doppler import run_doppler_gate_mc
 from .errors.scattering import run_scattering_gate
@@ -93,6 +94,16 @@ class AmplitudeSweepRow:
     analytical_error: float
     analytical_fidelity: float
     n_samples: int
+
+
+@dataclass(frozen=True)
+class CombinedBudgetRow:
+    """One row of the final baseline error-budget table."""
+
+    source: str
+    analytical_error: float
+    numerical_error: float
+    dominant_scaling: str
 
 
 def _check_positive_finite(name: str, value: float) -> float:
@@ -465,6 +476,62 @@ def sweep_amplitude(
     return rows
 
 
+def combined_error_budget_rows(
+    *,
+    n_samples: int = 24,
+    seed: int | None = 2024,
+    individual_n_samples: int = 200,
+) -> list[CombinedBudgetRow]:
+    """Return individual and total baseline error-budget rows."""
+
+    result = evaluate_error_budget(
+        n_samples=n_samples,
+        seed=seed,
+        individual_n_samples=individual_n_samples,
+    )
+    scaling = {
+        "decay": "1/(Ωτ)",
+        "blockade": "(Ω/U)²",
+        "doppler": "T/Ω²",
+        "scattering": "1/Δp",
+        "amplitude": "σΩ²",
+    }
+    names = {
+        "decay": "Rydberg decay",
+        "blockade": "Finite blockade",
+        "doppler": "Doppler dephasing",
+        "scattering": "Intermediate scattering",
+        "amplitude": "Amplitude noise",
+    }
+
+    rows = [
+        CombinedBudgetRow(
+            source=names[key],
+            analytical_error=float(result.individual_analytical_errors[key]),
+            numerical_error=float(result.individual_errors[key]),
+            dominant_scaling=scaling[key],
+        )
+        for key in ("decay", "blockade", "doppler", "scattering", "amplitude")
+    ]
+    rows.append(
+        CombinedBudgetRow(
+            source="Total (additive)",
+            analytical_error=float(result.additive_analytical_sum),
+            numerical_error=float(result.additive_numerical_sum),
+            dominant_scaling="Σ individual errors",
+        )
+    )
+    rows.append(
+        CombinedBudgetRow(
+            source="Total (combined)",
+            analytical_error=float(result.additive_analytical_sum),
+            numerical_error=float(result.combined_numerical_error),
+            dominant_scaling="all channels on",
+        )
+    )
+    return rows
+
+
 def _write_dataclass_csv(rows: Iterable[object], path: str | Path, *, empty_message: str) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -509,6 +576,12 @@ def write_amplitude_sweep_csv(rows: Iterable[AmplitudeSweepRow], path: str | Pat
     """Write amplitude-noise sweep rows to CSV and return the path."""
 
     return _write_dataclass_csv(rows, path, empty_message="cannot write an empty amplitude sweep")
+
+
+def write_combined_budget_csv(rows: Iterable[CombinedBudgetRow], path: str | Path) -> Path:
+    """Write final combined-budget rows to CSV and return the path."""
+
+    return _write_dataclass_csv(rows, path, empty_message="cannot write an empty combined budget")
 
 
 def read_decay_sweep_csv(path: str | Path) -> list[DecaySweepRow]:
@@ -574,6 +647,26 @@ def read_amplitude_sweep_csv(path: str | Path) -> list[AmplitudeSweepRow]:
             values = {key: float(value) for key, value in row.items()}
             values["n_samples"] = int(values["n_samples"])
             rows.append(AmplitudeSweepRow(**values))
+    if not rows:
+        raise ValueError(f"no rows found in {input_path}")
+    return rows
+
+
+def read_combined_budget_csv(path: str | Path) -> list[CombinedBudgetRow]:
+    """Read final combined-budget rows from CSV."""
+
+    input_path = Path(path)
+    with input_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = [
+            CombinedBudgetRow(
+                source=row["source"],
+                analytical_error=float(row["analytical_error"]),
+                numerical_error=float(row["numerical_error"]),
+                dominant_scaling=row["dominant_scaling"],
+            )
+            for row in reader
+        ]
     if not rows:
         raise ValueError(f"no rows found in {input_path}")
     return rows

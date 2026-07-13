@@ -135,3 +135,28 @@ def epsilon_scattering(
     omega1_over_omega2 = _check_positive_finite("omega1_over_omega2", omega1_over_omega2)
     beam_imbalance = 0.5 * (omega1_over_omega2 + 1.0 / omega1_over_omega2)
     return (7.0 * math.pi / 8.0) * (gamma_e / delta_p) * beam_imbalance
+
+
+def epsilon_total_additive(
+    *,
+    omega: float,
+    gamma: float,
+    blockade_shift: float,
+    gamma_e: float,
+    delta_p: float,
+    sigma_omega: float,
+    k_eff_rad_per_um: float,
+    temperature_K: float,
+    mass_kg: float,
+    omega1_over_omega2: float = 1.0,
+) -> tuple[float, dict[str, float]]:
+    """Return the additive baseline error budget and per-channel terms."""
+
+    components = {
+        "decay": epsilon_decay_from_gamma(omega, gamma),
+        "blockade": 0.0 if np.isposinf(float(blockade_shift)) else epsilon_blockade(omega, blockade_shift),
+        "doppler": epsilon_doppler(k_eff_rad_per_um, temperature_K, mass_kg, omega),
+        "scattering": epsilon_scattering(gamma_e, delta_p, omega1_over_omega2),
+        "amplitude": epsilon_amplitude(sigma_omega),
+    }
+    return float(sum(components.values())), components
